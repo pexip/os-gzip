@@ -1,0 +1,4 @@
+getdtablesize-missing.diff
+rsyncable.diff
+zless-LESSOPEN.diff
+zeroify-buffers.diff

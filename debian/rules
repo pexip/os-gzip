@@ -1,0 +1,89 @@
+#!/usr/bin/make -f
+#	Debian rules file for gzip, requires the debhelper package.
+#	Crafted by Bdale Garbee, bdale@gag.com, 5 November 2000
+
+# Comment this to turn off debhelper verbose mode.
+export DH_VERBOSE=1
+
+DEB_BUILD_GNU_TYPE = $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_HOST_GNU_TYPE = $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+CONFARGS = --host=$(DEB_HOST_GNU_TYPE)
+endif
+
+buildarch := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+ifeq ($(buildarch),amd64)
+CFLAGS=-g -O2 -Wall -DUNALIGNED_OK
+else
+CFLAGS=-g -O2 -Wall
+endif
+
+reconf-stamp:
+	cp -f /usr/share/misc/config.sub build-aux/config.sub
+	cp -f /usr/share/misc/config.guess build-aux/config.guess
+	autoreconf -v
+
+configure: configure-stamp
+configure-stamp: reconf-stamp
+	dh_testdir
+	mkdir -p build
+	cd build && ../configure \
+		--prefix=/usr --bindir=/bin \
+		--infodir=`pwd`/debian/gzip/usr/share/info \
+		--mandir=`pwd`/debian/gzip/usr/share/man $(CONFARGS)
+	touch configure-stamp
+
+build: build-arch build-indep
+
+build-arch: build-stamp 
+build-stamp: configure-stamp
+	dh_testdir
+	$(MAKE) -C build
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+	$(MAKE) -C build check
+endif
+endif
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	-rm -f build-stamp build-indep-stamp configure-stamp configure-indep-stamp reconf-stamp
+	-rm -rf build build-indep
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	$(MAKE) -C build install prefix=`pwd`/debian/gzip/usr bindir=`pwd`/debian/gzip/bin 
+
+binary-arch:	build install
+	dh_testdir -s
+	dh_testroot -s
+	dh_installdocs -s README* TODO
+	dh_installman *.1
+	dh_installinfo -s doc/gzip.info
+	dh_installchangelogs -s ChangeLog
+	dh_link -s
+	dh_lintian -s
+	dh_strip -s
+	dh_compress -s
+	ln -s gunzip.1.gz debian/gzip/usr/share/man/man1/uncompress.1.gz
+	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zegrep.1.gz
+	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zfgrep.1.gz
+	dh_fixperms -s
+	# You may want to make some executables suid here.
+	dh_makeshlibs -s
+	dh_installdeb -s
+	dh_shlibdeps -s
+	dh_gencontrol -s
+	dh_md5sums -s
+	dh_builddeb -s
+
+binary: binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure
+.PHONY: build-indep install-indep configure-indep
+
