@@ -1,4 +1,5 @@
-getdtablesize-missing.diff
 rsyncable.diff
-zless-LESSOPEN.diff
-zeroify-buffers.diff
+sigpipe.diff
+zgrep-man-diff
+gnulib-mingw-w64.diff
+man-page-typo.diff
