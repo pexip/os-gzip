@@ -2,11 +2,11 @@ Source: gzip
 Section: utils
 Priority: required
 Maintainer: Pexip AS <packaging@pexip.com>
-XSBC-Pexip-Original-Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-XSBC-Original-Maintainer: Bdale Garbee <bdale@gag.com>
+XSBC-Pexip-Original-Maintainer: Bdale Garbee <bdale@gag.com>
 XSBC-Pexip-Original-Uploaders: Carl Worth <cworth@cworth.org>
-Build-Depends: debhelper (>= 5), texinfo, autoconf, automake, autotools-dev
-Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 5), texinfo, autoconf, automake, autotools-dev, less
+Build-Depends-Indep: mingw-w64
+Standards-Version: 3.9.5
 Vcs-Git: git://git.gag.com/debian/gzip
 Vcs-Browser: http://git.gag.com/?p=debian/gzip
 XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
@@ -22,3 +22,11 @@ Description: GNU compression utilities
  are also the default compression tools for Debian.  They typically operate 
  on files with names ending in '.gz', but can also decompress files ending 
  in '.Z' created with 'compress'.
+
+Package: gzip-win32
+Architecture: all
+Priority: extra
+Suggests: wine
+Description: GNU compression utility (win32 build)
+ This is a win32 version of gzip, meant to be used by the win32-loader
+ component of Debian-Installer.

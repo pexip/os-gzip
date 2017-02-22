@@ -1,6 +1,6 @@
 # Configure template for gzip.
 
-# Copyright (C) 1999-2002, 2006-2007, 2009-2010 Free Software Foundation, Inc.
+# Copyright (C) 1999-2002, 2006-2007, 2009-2013 Free Software Foundation, Inc.
 
 # Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -21,37 +21,74 @@
 
 AC_PREREQ([2.60])
 AC_INIT([gzip],
-	m4_esyscmd([build-aux/git-version-gen .tarball-version]),
-	[bug-gzip@gnu.org])
+        m4_esyscmd([build-aux/git-version-gen .tarball-version]),
+        [bug-gzip@gnu.org])
 
-AC_CONFIG_SRCDIR(gzip.c)
-AC_CONFIG_AUX_DIR(build-aux)
+AC_CONFIG_SRCDIR([gzip.c])
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([lib/config.h:lib/config.hin])
-AM_INIT_AUTOMAKE([1.11 dist-xz color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 subdir-objects dist-xz color-tests parallel-tests])
 AM_SILENT_RULES([yes]) # make --enable-silent-rules the default.
+
+dnl POSIXCHECK is worthwhile for maintainers, but adds several seconds
+dnl (more than 10% execution time) to ./configure, with no benefit for
+dnl most users.  Using it to look for bugs requires:
+dnl   GNULIB_POSIXCHECK=1 autoreconf -f
+dnl   ./configure
+dnl   make
+dnl   make -C src clean
+dnl   make CFLAGS=-DGNULIB_POSIXCHECK=1
+dnl FIXME: Once we figure out how to avoid false positives, we should
+dnl have 'make my-distcheck' in dist-check.mk exercise this.
+m4_syscmd([test "${GNULIB_POSIXCHECK+set}" = set])
+m4_if(m4_sysval, [0], [], [dnl
+gl_ASSERT_NO_GNULIB_POSIXCHECK])
 
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
 AC_PROG_CPP
+AC_PROG_GREP
 AC_CHECK_TOOL([NM], [nm], [nm])
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_PROG_SHELL
 
 gl_EARLY
-AC_SYS_LARGEFILE
 
 gl_INIT
 
 AC_ARG_ENABLE([gcc-warnings],
   [AS_HELP_STRING([--enable-gcc-warnings],
-                  [turn on lots of GCC warnings (for developers)])],
+     [turn on many GCC warnings (for developers; best with GNU make)])],
   [case $enableval in
      yes|no) ;;
      *)      AC_MSG_ERROR([bad value $enableval for gcc-warnings option]) ;;
    esac
    gl_gcc_warnings=$enableval],
-  [gl_gcc_warnings=no]
+  [if test -d "$srcdir"/.git; then
+     gl_gcc_warnings=yes
+   else
+     gl_gcc_warnings=no
+   fi]
+)
+
+# gl_GCC_VERSION_IFELSE([major], [minor], [run-if-found], [run-if-not-found])
+# ------------------------------------------------
+# If $CPP is gcc-MAJOR.MINOR or newer, then run RUN-IF-FOUND.
+# Otherwise, run RUN-IF-NOT-FOUND.
+AC_DEFUN([gl_GCC_VERSION_IFELSE],
+  [AC_PREPROC_IFELSE(
+    [AC_LANG_PROGRAM(
+      [[
+#if ($1) < __GNUC__ || (($1) == __GNUC__ && ($2) <= __GNUC_MINOR__)
+/* ok */
+#else
+# error "your version of gcc is older than $1.$2"
+#endif
+      ]]),
+    ], [$3], [$4])
+  ]
 )
 
 if test "$gl_gcc_warnings" = yes; then
@@ -86,24 +123,34 @@ if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wmissing-format-attribute" # copy.c
   nw="$nw -Wunsafe-loop-optimizations" # a few src/*.c
   nw="$nw -Winline"                 # system.h's readdir_ignoring_dot_and_dotdot
-  nw="$nw -Wstrict-overflow"        # expr.c, pr.c, tr.c, factor.c
-  # initial problems in gzip
+
+  # Warnings that gzip runs afoul of but coreutils does not.
   nw="$nw -Wold-style-definition"
   nw="$nw -Wshadow"
-  nw="$nw -Wunused-macros"
-  # ?? -Wstrict-overflow
+  nw="$nw -Wstrict-overflow"
+
+  # Using -Wstrict-overflow is a pain, but the alternative is worse.
+  # For an example, see the code that provoked this report:
+  # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33498
+  # Code like that still infloops with gcc-4.6.0 and -O2.  Scary indeed.
 
   gl_MANYWARN_ALL_GCC([ws])
   gl_MANYWARN_COMPLEMENT([ws], [$ws], [$nw])
   for w in $ws; do
     gl_WARN_ADD([$w])
   done
-  gl_WARN_ADD([-Wno-missing-field-initializers]) # We need this one
   gl_WARN_ADD([-Wno-sign-compare])     # Too many warnings for now
-  gl_WARN_ADD([-Wno-pointer-sign])     # Too many warnings for now
   gl_WARN_ADD([-Wno-unused-parameter]) # Too many warnings for now
-  gl_WARN_ADD([-Wno-overflow])         # util.c
-  gl_WARN_ADD([-Wno-type-limits])      # util.c
+  gl_WARN_ADD([-Wsuggest-attribute=const])
+  gl_WARN_ADD([-Wsuggest-attribute=noreturn])
+  gl_WARN_ADD([-Wno-format-nonliteral])
+
+  # Enable this warning only with gcc-4.7 and newer.  With 4.6.2 20111027,
+  # it suggests test.c's advance function may be pure, even though it
+  # increments a global variable.  Oops.
+  # Normally we'd write code to test for the precise failure, but that
+  # requires a relatively large input to make gcc exhibit the failure.
+  gl_GCC_VERSION_IFELSE([4], [7], [gl_WARN_ADD([-Wsuggest-attribute=pure])])
 
   # In spite of excluding -Wlogical-op above, it is enabled, as of
   # gcc 4.5.0 20090517, and it provokes warnings in cat.c, dd.c, truncate.c
@@ -115,14 +162,21 @@ if test "$gl_gcc_warnings" = yes; then
   AC_SUBST([WARN_CFLAGS])
 
   AC_DEFINE([lint], [1], [Define to 1 if the compiler is checking for lint.])
-  AC_DEFINE([_FORTIFY_SOURCE], [2],
-    [enable compile-time and run-time bounds-checking, and some warnings])
+  AH_VERBATIM([FORTIFY_SOURCE],
+  [/* Enable compile-time and run-time bounds-checking, and some warnings,
+      without upsetting glibc 2.15+. */
+   #if !defined _FORTIFY_SOURCE && defined __OPTIMIZE__ && __OPTIMIZE__
+   # define _FORTIFY_SOURCE 2
+   #endif
+  ])
   AC_DEFINE([GNULIB_PORTCHECK], [1], [enable some gnulib portability checks])
 
   # We use a slightly smaller set of warning options for lib/.
   # Remove the following and save the result in GNULIB_WARN_CFLAGS.
   nw=
+  nw="$nw -Wstrict-overflow"
   nw="$nw -Wuninitialized"
+  nw="$nw -Wunused-macros"
   nw="$nw -Wmissing-prototypes"
   nw="$nw -Wold-style-definition"
   gl_MANYWARN_COMPLEMENT([GNULIB_WARN_CFLAGS], [$WARN_CFLAGS], [$nw])
@@ -130,14 +184,14 @@ if test "$gl_gcc_warnings" = yes; then
 fi
 
 # cc -E produces incorrect asm files on SVR4, so postprocess it.
-ASCPPPOST="sed '/^ *#/d; s,//.*,,; s/% /%/g; s/\\. /./g'"
+ASCPPPOST="sed '/^ *\\#/d; s,//.*,,; s/% /%/g; s/\\. /./g'"
 AC_SUBST([ASCPPPOST])
 
 AC_CACHE_CHECK([for underline in external names], [gzip_cv_underline],
   [gzip_cv_underline=yes
    AC_TRY_COMPILE([int foo() {return 0;}], [],
      [$NM conftest.$OBJEXT | grep _foo >/dev/null 2>&1 ||
-	gzip_cv_underline=no])])
+        gzip_cv_underline=no])])
 ASCPPFLAGS=
 if test $gzip_cv_underline = no; then
   ASCPPFLAGS='-DNO_UNDERLINE'
@@ -154,21 +208,21 @@ AC_CACHE_CHECK([for an assembler syntax supported by this package],
    *' NO_ASM '*) ;;
    *)
      if cp $srcdir/lib/match.c _match.S &&
-	eval "$CPP $CPPFLAGS $ASCPPFLAGS _match.S > _match.i" 2>/dev/null &&
-	eval "$ASCPPPOST < _match.i > match_.s" 2>/dev/null; then
+        eval "$CPP $CPPFLAGS $ASCPPFLAGS _match.S > _match.i" &&
+        eval "$ASCPPPOST < _match.i > match_.s"; then
        if test ! -s match_.s || grep error < match_.s > /dev/null; then
-	 :
-       elif eval "$CC $CPPFLAGS $CFLAGS -c match_.s >/dev/null 2>&1" &&
-	    test -f match_.$OBJEXT; then
-	 rm -f match_.$OBJEXT
-	 gzip_cv_assembler=yes
-	 if echo 'void foo (void) {}' > conftest.c &&
-	    eval "$CC $CPPFLAGS $CFLAGS -S conftest.c >/dev/null 2>&1" &&
-	    grep '\.note\.GNU-stack' conftest.s >/dev/null 2>&1 &&
-	    eval "$CC $CPPFLAGS $CFLAGS -c -Wa,--noexecstack match_.s >/dev/null 2>&1" &&
-	    test -f match_.$OBJEXT; then
-	   gzip_cv_assembler='yes, with -Wa,--noexecstack'
-	 fi
+         :
+       elif eval "$CC $CPPFLAGS $CFLAGS -c match_.s >/dev/null" &&
+            test -f match_.$OBJEXT; then
+         rm -f match_.$OBJEXT
+         gzip_cv_assembler=yes
+         if echo 'void foo (void) {}' > conftest.c &&
+            eval "$CC $CPPFLAGS $CFLAGS -S conftest.c >/dev/null" &&
+            grep '\.note\.GNU-stack' conftest.s >/dev/null &&
+            eval "$CC $CPPFLAGS $CFLAGS -c -Wa,--noexecstack match_.s >/dev/null" &&
+            test -f match_.$OBJEXT; then
+           gzip_cv_assembler='yes, with -Wa,--noexecstack'
+         fi
        fi
      fi
      rm -f conftest* _match.i _match.S match_.s match_.$OBJEXT;;
@@ -195,5 +249,5 @@ AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_OFF_T
 
-AC_CONFIG_FILES([Makefile doc/Makefile lib/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile lib/Makefile tests/Makefile])
 AC_OUTPUT

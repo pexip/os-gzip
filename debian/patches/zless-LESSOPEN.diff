@@ -1,9 +1,0 @@
---- gzip-1.4.orig/zless.in
-+++ gzip-1.4/zless.in
-@@ -53,5 +53,5 @@ if test "${LESSMETACHARS+set}" != set; t
-   export LESSMETACHARS
- fi
- 
--LESSOPEN="|gzip -cdfq -- %s"; export LESSOPEN
-+LESSOPEN="|-gzip -cdfq -- %s"; export LESSOPEN
- exec less "$@"
