@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 5), texinfo, autoconf, automake, autotools-dev
 Standards-Version: 3.9.2
 Vcs-Git: git://git.gag.com/debian/gzip
 Vcs-Browser: http://git.gag.com/?p=debian/gzip
-XS-Pexip-Upstream: http://archive.ubuntu.com/ubuntu/ precise
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: gzip
 Architecture: any
