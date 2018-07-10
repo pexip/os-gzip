@@ -1,3 +1,10 @@
+gzip (1.6-5) unstable; urgency=low
+
+  * stop including date in manual to enable reproducible builds, 
+    closes: #794011
+
+ -- Bdale Garbee <bdale@gag.com>  Mon, 14 Mar 2016 14:41:45 -0600
+
 gzip (1.6-4pexip1) pexip; urgency=low
 
   * Migrate to Jessie
