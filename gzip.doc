@@ -12,11 +12,11 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
        4mGzip24m  reduces  the	size  of  the  named  files using Lempel-Ziv coding
        (LZ77).	Whenever possible, each file  is  replaced  by	one  with  the
        extension 1m.gz22m, while keeping the same ownership modes, access and modi-
-       fication times.	(The default extension is 1m-gz 22mfor VMS,  1mz  22mfor  MSDOS,
-       OS/2  FAT, Windows NT FAT and Atari.)  If no files are specified, or if
-       a file name is "-", the standard input is compressed  to	 the  standard
-       output.	4mGzip24m will only attempt to compress regular files.	In particu-
-       lar, it will ignore symbolic links.
+       fication times.	(The default extension is 1mz 22mfor MSDOS, OS/2 FAT,  Win-
+       dows  NT	 FAT and Atari.)  If no files are specified, or if a file name
+       is "-", the standard input is compressed to the standard output.	  4mGzip0m
+       will  only  attempt  to compress regular files.	In particular, it will
+       ignore symbolic links.
 
        If the compressed file name is too long for its file system, 4mgzip24m trun-
        cates  it.   4mGzip24m  attempts to truncate only the parts of the file name
@@ -29,7 +29,7 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
        By default, 4mgzip24m keeps the original file name and timestamp in the com-
        pressed	file.  These  are used when decompressing the file with the 1m-N0m
        option. This is useful when the compressed file name was	 truncated  or
-       when the time stamp was not preserved after a file transfer.
+       when the timestamp was not preserved after a file transfer.
 
        Compressed  files  can be restored to their original form using 4mgzip24m 4m-d0m
        or 4mgunzip24m or 4mzcat24m.  If the original name saved in the	compressed  file
@@ -137,7 +137,7 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
 
 		  method: compression method
 		  crc: the 32-bit CRC of the uncompressed data
-		  date & time: time stamp for the uncompressed file
+		  date & time: timestamp for the uncompressed file
 
 	      The compression methods currently supported  are	deflate,  com-
 	      press,  lzh  (SCO	 compress  -H)	and pack.  The crc is given as
@@ -154,20 +154,20 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
 	      Display the 4mgzip24m license and quit.
 
        1m-n --no-name0m
-	      When  compressing,  do  not save the original file name and time
+	      When  compressing,  do not save the original file name and time-
 	      stamp by default. (The original name is always saved if the name
 	      had  to  be  truncated.)	When decompressing, do not restore the
 	      original file name if present (remove only the 4mgzip24m suffix  from
-	      the  compressed  file name) and do not restore the original time
+	      the  compressed file name) and do not restore the original time-
 	      stamp if present (copy it from the compressed file). This option
 	      is the default when decompressing.
 
        1m-N --name0m
-	      When  compressing,  always  save the original file name and time
+	      When  compressing,  always save the original file name and time-
 	      stamp; this is the  default.  When  decompressing,  restore  the
-	      original	file  name  and	 time stamp if present. This option is
-	      useful on systems which have a limit on file name length or when
-	      the time stamp has been lost after a file transfer.
+	      original file name and timestamp if present. This option is use-
+	      ful on systems which have a limit on file name  length  or  when
+	      the timestamp has been lost after a file transfer.
 
        1m-q --quiet0m
 	      Suppress all warnings.
@@ -188,6 +188,11 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
 	      suffixes to try, when deriving an output file name from an input
 	      file name.
 
+       1m--synchronous0m
+	      Use  synchronous	output.	 With this option, 4mgzip24m is less likely
+	      to lose data during a system crash, but it can  be  considerably
+	      slower.
+
        1m-t --test0m
 	      Test. Check the compressed file integrity.
 
@@ -206,6 +211,19 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
 	      pression method (best  compression).   The  default  compression
 	      level is 1m-6 22m(that is, biased towards high compression at expense
 	      of speed).
+
+       1m--rsyncable0m
+	      When you synchronize a compressed file  between  two  computers,
+	      this  option  allows  rsync  to  transfer	 only  files that were
+	      changed in the archive instead of the entire archive.  Normally,
+	      after  a change is made to any file in the archive, the compres-
+	      sion algorithm can generate a new version of  the	 archive  that
+	      does  not	 match	the  previous  version of the archive. In this
+	      case, rsync transfers the entire new version of the  archive  to
+	      the  remote computer.  With this option, rsync can transfer only
+	      the changed files as well as a small amount of metadata that  is
+	      required	to  update  the archive structure in the area that was
+	      changed.
 
 1mADVANCED USAGE0m
        Multiple compressed files can be concatenated.  In  this	 case,	4mgunzip0m
@@ -249,28 +267,34 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
        ently. gzip is designed as a complement to tar, not as a replacement.
 
 1mENVIRONMENT0m
-       The  environment	 variable  1mGZIP  22mcan hold a set of default options for
-       4mgzip24m.  These options are interpreted first and can	be  overwritten	 by
-       explicit command line parameters. For example:
-	     for sh:	GZIP="-8v --name"; export GZIP
-	     for csh:	setenv GZIP "-8v --name"
-	     for MSDOS: set GZIP=-8v --name
+       The  obsolescent	 environment  variable	1mGZIP 22mcan hold a set of default
+       options for 4mgzip24m.  These options are interpreted first and can be over-
+       written	by  explicit command line parameters.  As this can cause prob-
+       lems when using scripts, this feature is	 supported  only  for  options
+       that  are  reasonably likely to not cause too much harm, and 4mgzip24m warns
+       if it is used.  This feature will be removed in	a  future  release  of
+       4mgzip24m.
 
-       On  Vax/VMS, the name of the environment variable is GZIP_OPT, to avoid
-       a conflict with the symbol set for invocation of the program.
+       You can use an alias or script instead.	For example, if 4mgzip24m is in the
+       directory 1m/usr/bin 22myou can prepend 1m$HOME/bin 22mto your 1mPATH 22mand create an
+       executable script 1m$HOME/bin/gzip 22mcontaining the following:
+
+	     #! /bin/sh
+	     export PATH=/usr/bin
+	     exec gzip -9 "$@"
 
 1mSEE ALSO0m
        znew(1), zcmp(1), zmore(1), zforce(1), gzexe(1), zip(1), unzip(1), com-
        press(1)
 
        The 4mgzip24m file format is specified in P. Deutsch, GZIP file format spec-
-       ification version 4.3, 1m<http://www.ietf.org/rfc/rfc1952.txt>22m,  Internet
-       RFC  1952  (May	1996).	 The  4mzip24m	deflation format is specified in P.
-       Deutsch, DEFLATE Compressed  Data  Format  Specification	 version  1.3,
-       1m<http://www.ietf.org/rfc/rfc1951.txt>22m, Internet RFC 1951 (May 1996).
+       ification version 4.3, 1m<https://www.ietf.org/rfc/rfc1952.txt>22m, Internet
+       RFC 1952 (May 1996).  The 4mzip24m  deflation  format  is  specified  in	 P.
+       Deutsch,	 DEFLATE  Compressed  Data  Format  Specification version 1.3,
+       1m<https://www.ietf.org/rfc/rfc1951.txt>22m, Internet RFC 1951 (May 1996).
 
 1mDIAGNOSTICS0m
-       Exit  status  is normally 0; if an error occurs, exit status is 1. If a
+       Exit status is normally 0; if an error occurs, exit status is 1.	 If  a
        warning occurs, exit status is 2.
 
        Usage: gzip [-cdfhklLnNrtvV19] [-S suffix] [file ...]
@@ -280,90 +304,82 @@ GZIP(1)			    General Commands Manual		       GZIP(1)
 	      The file specified to 4mgunzip24m has not been compressed.
 
        4mfile24m: Corrupt input. Use zcat to recover some data.
-	      The compressed file has been damaged. The data up to  the	 point
+	      The  compressed  file has been damaged. The data up to the point
 	      of failure can be recovered using
 
 		    zcat 4mfile24m > recover
 
        4mfile24m: compressed with 4mxx24m bits, can only handle 4myy24m bits
-	      4mFile24m	 was  compressed  (using  LZW) by a program that could deal
+	      4mFile24m was compressed (using LZW) by a	 program  that	could  deal
 	      with more 4mbits24m than the decompress code on this machine.  Recom-
-	      press  the file with gzip, which compresses better and uses less
+	      press the file with gzip, which compresses better and uses  less
 	      memory.
 
-       4mfile24m: already has .gz suffix -- no change
-	      The file is assumed to be already compressed.  Rename  the  file
+       4mfile24m: already has .gz suffix -- unchanged
+	      The  file	 is assumed to be already compressed.  Rename the file
 	      and try again.
 
        4mfile24m already exists; do you wish to overwrite (y or n)?
-	      Respond  "y"  if you want the output file to be replaced; "n" if
+	      Respond "y" if you want the output file to be replaced;  "n"  if
 	      not.
 
        gunzip: corrupt input
-	      A SIGSEGV violation was detected which usually  means  that  the
+	      A	 SIGSEGV  violation  was detected which usually means that the
 	      input file has been corrupted.
 
        4mxx.x%24m Percentage of the input saved by compression.
 	      (Relevant only for 1m-v 22mand 1m-l22m.)
 
        -- not a regular file or directory: ignored
-	      When  the input file is not a regular file or directory, (e.g. a
+	      When the input file is not a regular file or directory, (e.g.  a
 	      symbolic link, socket, FIFO, device file), it is left unaltered.
 
        -- has 4mxx24m other links: unchanged
-	      The input file has links; it is left unchanged.  See  4mln24m(1)	for
+	      The  input  file has links; it is left unchanged.	 See 4mln24m(1) for
 	      more information. Use the 1m-f 22mflag to force compression of multi-
 	      ply-linked files.
 
 1mCAVEATS0m
-       When writing compressed data to a tape, it is  generally	 necessary  to
-       pad  the	 output	 with  zeroes up to a block boundary. When the data is
-       read and the whole block is passed to 4mgunzip24m for decompression,  4mgunzip0m
-       detects	that there is extra trailing garbage after the compressed data
-       and emits a warning by default. You have to use the --quiet  option  to
-       suppress	 the  warning.	This option can be set in the 1mGZIP 22menvironment
-       variable as in:
-	 for sh:  GZIP="-q"  tar -xfz --block-compress /dev/rst0
-	 for csh: (setenv GZIP -q; tar -xfz --block-compr /dev/rst0
-
-       In the above example, gzip is invoked implicitly by the	-z  option  of
-       GNU  tar. Make sure that the same block size (-b option of tar) is used
-       for reading and	writing	 compressed  data  on  tapes.	(This  example
-       assumes you are using the GNU version of tar.)
+       When  writing  compressed  data to a tape, it is generally necessary to
+       pad the output with zeroes up to a block boundary.  When	 the  data  is
+       read  and the whole block is passed to 4mgunzip24m for decompression, 4mgunzip0m
+       detects that there is extra trailing garbage after the compressed  data
+       and emits a warning by default.	You can use the --quiet option to sup-
+       press the warning.
 
 1mBUGS0m
-       The  gzip  format  represents the input size modulo 2^32, so the --list
-       option reports incorrect uncompressed sizes and compression ratios  for
-       uncompressed  files  4 GB and larger.  To work around this problem, you
-       can use the following command to discover a large  uncompressed	file's
+       The gzip format represents the input size modulo 2^32,  so  the	--list
+       option  reports incorrect uncompressed sizes and compression ratios for
+       uncompressed files 4 GB and larger.  To work around this	 problem,  you
+       can  use	 the following command to discover a large uncompressed file's
        true size:
 
 	     zcat file.gz | wc -c
 
-       The  --list  option reports sizes as -1 and crc as ffffffff if the com-
+       The --list option reports sizes as -1 and crc as ffffffff if  the  com-
        pressed file is on a non seekable media.
 
-       In some rare cases, the --best option gives worse compression than  the
-       default	compression  level  (-6). On some highly redundant files, 4mcom-0m
+       In  some rare cases, the --best option gives worse compression than the
+       default compression level (-6). On some highly  redundant  files,  4mcom-0m
        4mpress24m compresses better than 4mgzip24m.
 
 1mCOPYRIGHT NOTICE0m
-       Copyright (C) 1998, 1999, 2001, 2002, 2012  Free	 Software  Foundation,
-       Inc.
+       Copyright (C) 1998-1999, 2001-2002, 2012, 2015-2018 Free Software Foun-
+       dation, Inc.
        Copyright (C) 1992, 1993 Jean-loup Gailly
 
-       Permission  is  granted	to make and distribute verbatim copies of this
-       manual provided the copyright notice and	 this  permission  notice  are
+       Permission is granted to make and distribute verbatim  copies  of  this
+       manual  provided	 the  copyright	 notice and this permission notice are
        preserved on all copies.
 
-       Permission  is granted to copy and distribute modified versions of this
-       manual under the conditions for verbatim	 copying,  provided  that  the
-       entire  resulting derived work is distributed under the terms of a per-
+       Permission is granted to copy and distribute modified versions of  this
+       manual  under  the  conditions  for verbatim copying, provided that the
+       entire resulting derived work is distributed under the terms of a  per-
        mission notice identical to this one.
 
-       Permission is granted to copy and distribute translations of this  man-
+       Permission  is granted to copy and distribute translations of this man-
        ual into another language, under the above conditions for modified ver-
-       sions, except that this permission notice may be stated in  a  transla-
+       sions,  except  that this permission notice may be stated in a transla-
        tion approved by the Foundation.
 
 				     local			       GZIP(1)

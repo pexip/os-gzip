@@ -1,6 +1,6 @@
 # Configure template for gzip.
 
-# Copyright (C) 1999-2002, 2006-2007, 2009-2013 Free Software Foundation, Inc.
+# Copyright (C) 1999-2002, 2006-2007, 2009-2018 Free Software Foundation, Inc.
 
 # Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -28,7 +28,8 @@ AC_CONFIG_SRCDIR([gzip.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([lib/config.h:lib/config.hin])
-AM_INIT_AUTOMAKE([1.11 subdir-objects dist-xz color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 subdir-objects dist-xz dist-zip
+                  color-tests parallel-tests])
 AM_SILENT_RULES([yes]) # make --enable-silent-rules the default.
 
 dnl POSIXCHECK is worthwhile for maintainers, but adds several seconds
@@ -105,6 +106,7 @@ if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wtraditional"            # Warns on #elif which we use often
   nw="$nw -Wcast-qual"              # Too many warnings for now
   nw="$nw -Wconversion"             # Too many warnings for now
+  nw="$nw -Wduplicated-branches"    # Too many false alarms
   nw="$nw -Wsystem-headers"         # Don't let system headers trigger warnings
   nw="$nw -Wsign-conversion"        # Too many warnings for now
   nw="$nw -Wtraditional-conversion" # Too many warnings for now
@@ -131,7 +133,7 @@ if test "$gl_gcc_warnings" = yes; then
 
   # Using -Wstrict-overflow is a pain, but the alternative is worse.
   # For an example, see the code that provoked this report:
-  # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33498
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=33498
   # Code like that still infloops with gcc-4.6.0 and -O2.  Scary indeed.
 
   gl_MANYWARN_ALL_GCC([ws])
@@ -204,8 +206,8 @@ AC_OBJEXT
 AC_CACHE_CHECK([for an assembler syntax supported by this package],
   [gzip_cv_assembler],
   [gzip_cv_assembler=no
-   case " $DEFS " in
-   *' NO_ASM '*) ;;
+   case $DEFS in
+   *NO_ASM*) ;;
    *)
      if cp $srcdir/lib/match.c _match.S &&
         eval "$CPP $CPPFLAGS $ASCPPFLAGS _match.S > _match.i" &&
@@ -228,7 +230,7 @@ AC_CACHE_CHECK([for an assembler syntax supported by this package],
      rm -f conftest* _match.i _match.S match_.s match_.$OBJEXT;;
    esac])
 if test "$gzip_cv_assembler" != no; then
-  AC_DEFINE(ASMV, ,
+  AC_DEFINE([ASMV], ,
     [Define if an assembler version of longest_match is available.])
   AC_LIBOBJ(match)
 fi

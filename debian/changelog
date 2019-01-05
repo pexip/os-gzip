@@ -1,3 +1,78 @@
+gzip (1.9-3) unstable; urgency=medium
+
+  * move canonical packaging repo to salsa.debian.org
+  * merge two existing NMUs
+  * deliver NEWS file, closes: #908507
+
+ -- Bdale Garbee <bdale@gag.com>  Sat, 05 Jan 2019 16:03:32 -0700
+
+gzip (1.9-2.2) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Niels Thykier ]
+  * Cherry-pick patch from gnulib upstream to make gzip build
+    with glibc/2.28.  (Closes: #915150)
+  * Declare that gzip does not need (fake)root for building the
+    debs.
+  * Add patch to remove incorrect -Wabi as -Wabi should always
+    take a parameter (e.g. -Wabi=11) and it fails with -Werror=abi.
+  * Add a patch to remove -Werror(=...) as it trips on some gnulib
+    code.
+  * Include autopkgtest based on the version by Steve Langasek for
+    Ubuntu.
+  * Remove fallback code to use dh_clean -k.
+  * Remove usage of deprecated -s parameter for debhelper commands
+    (replacing them with "-a").
+  * Add a Homepage field.  Thanks to Jakub Wilk for the suggestion.
+    (Closes: #888619)
+  * Remove empty lintian override directory.
+
+  [ Andreas Henriksson ]
+  * Set GREP=grep during configure, otherwise zgrep embeds the full
+    path. (Closes: #914907)
+
+ -- Niels Thykier <niels@thykier.net>  Fri, 28 Dec 2018 14:34:28 +0000
+
+gzip (1.9-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Disable usage of assembler code (Closes: #890279)
+    - this affects i386, m68k and ia64 (and gets rid of textrels
+      on atleast i386, thanks to Andreas Pommer for testing).
+    - fedora claims gcc generates more optimized code anyway.
+    - supposedly this also fixes gzip generating different results
+      on ia64, thanks to Jason Duerstock for pointing it out.
+      (Closes: #688958)
+
+ -- Andreas Henriksson <andreas@fatal.se>  Sat, 29 Sep 2018 18:28:06 +0200
+
+gzip (1.9-2) unstable; urgency=medium
+
+  * move to upstream's less-ugly fix for mingw compilation failure
+
+ -- Bdale Garbee <bdale@gag.com>  Sun, 05 Aug 2018 08:30:09 +0800
+
+gzip (1.9-1) unstable; urgency=medium
+
+  * new upstream version, closes: #855839
+  * patch from Ben Wong that fixes zgrep failure on filenames starting with
+    'binary' due to missing dashes in an option detection pattern match,
+    closes: #854878
+  * update to policy 4.1.5, including use of https in vcs entries
+  * patch gzip.c to work around mingw compiliation failure
+  * use optional priority for gzip-win32 now that extra is deprecated
+  * use architecture.mk instead of setting ARCH vars by hand in rules
+  * update build dependencies for debhelper compat level 11
+
+ -- Bdale Garbee <bdale@gag.com>  Sun, 29 Jul 2018 15:17:27 +0800
+
+gzip (1.8-1) unstable; urgency=low
+
+  * new upstream version, closes: #855839
+
+ -- Bdale Garbee <bdale@gag.com>  Fri, 24 Feb 2017 14:50:07 -0700
+
 gzip (1.6-5) unstable; urgency=low
 
   * stop including date in manual to enable reproducible builds, 

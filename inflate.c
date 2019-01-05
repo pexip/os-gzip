@@ -1,6 +1,6 @@
 /* Inflate deflated data
 
-   Copyright (C) 1997-1999, 2002, 2006, 2009-2013 Free Software Foundation,
+   Copyright (C) 1997-1999, 2002, 2006, 2009-2018 Free Software Foundation,
    Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -116,10 +116,10 @@
  */
 
 #include <config.h>
-#include "tailor.h"
 
 #include <stdlib.h>
 
+#include "tailor.h"
 #include "gzip.h"
 #define slide window
 
@@ -219,13 +219,7 @@ static ush mask_bits[] = {
 
 #define GETBYTE() (inptr < insize ? inbuf[inptr++] : (wp = w, fill_inbuf(0)))
 
-#ifdef CRYPT
-  uch cc;
-#  define NEXTBYTE() \
-     (decrypt ? (cc = GETBYTE(), zdecode(cc), cc) : GETBYTE())
-#else
-#  define NEXTBYTE()  (uch)GETBYTE()
-#endif
+#define NEXTBYTE()  (uch)GETBYTE()
 #define NEEDBITS(n) {while(k<(n)){b|=((ulg)NEXTBYTE())<<k;k+=8;}}
 #define DUMPBITS(n) {b>>=(n);k-=(n);}
 

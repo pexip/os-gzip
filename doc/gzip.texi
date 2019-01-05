@@ -1,6 +1,7 @@
 \input texinfo @c -*-texinfo-*-
 @c %**start of header
 @setfilename gzip.info
+@documentencoding UTF-8
 @include version.texi
 @settitle GNU Gzip
 @finalout
@@ -11,7 +12,7 @@ This manual is for GNU Gzip
 (version @value{VERSION}, @value{UPDATED}),
 and documents commands for compressing and decompressing data.
 
-Copyright @copyright{} 1998-1999, 2001-2002, 2006-2007, 2009-2013 Free Software
+Copyright @copyright{} 1998-1999, 2001-2002, 2006-2007, 2009-2018 Free Software
 Foundation, Inc.
 
 Copyright @copyright{} 1992, 1993 Jean-loup Gailly
@@ -79,13 +80,13 @@ Free Documentation License''.
 @chapter Overview
 @cindex overview
 
-@command{gzip} reduces the size of the named files using Lempel-Ziv coding
+@command{gzip} reduces the size of the named files using Lempel--Ziv coding
 (LZ77).  Whenever possible, each file is replaced by one with the
 extension @samp{.gz}, while keeping the same ownership modes, access and
-modification times.  (The default extension is @samp{-gz} for @abbr{VMS},
+modification times.  (The default extension is
 @samp{z} for @abbr{MSDOS}, @abbr{OS/2} @abbr{FAT} and Atari.)
 If no files are specified or
-if a file name is "-", the standard input is compressed to the standard
+if a file name is @file{-}, the standard input is compressed to the standard
 output.  @command{gzip} will only attempt to compress regular files.  In
 particular, it will ignore symbolic links.
 
@@ -97,15 +98,15 @@ For example, if file names are limited to 14 characters, gzip.msdos.exe
 is compressed to gzi.msd.exe.gz.  Names are not truncated on systems
 which do not have a limit on file name length.
 
-By default, @command{gzip} keeps the original file name and time stamp in
+By default, @command{gzip} keeps the original file name and timestamp in
 the compressed file.  These are used when decompressing the file with the
 @option{-N} option.  This is useful when the compressed file name was
-truncated or when the time stamp was not preserved after a file
+truncated or when the timestamp was not preserved after a file
 transfer.  However, due to limitations in the current @command{gzip} file
-format, fractional seconds are discarded.  Also, time stamps must fall
-within the range 1970-01-01 00:00:00 through 2106-02-07 06:28:15
-@abbr{UTC}, and hosts whose operating systems use 32-bit time
-stamps are further restricted to time stamps no later than 2038-01-19
+format, fractional seconds are discarded.  Also, timestamps must fall
+within the range 1970-01-01 00:00:01 through 2106-02-07 06:28:15
+@abbr{UTC}, and hosts whose operating systems use 32-bit timestamps
+are further restricted to timestamps no later than 2038-01-19
 03:14:07 @abbr{UTC}.  The upper bounds assume the typical case
 where leap seconds are ignored.
 
@@ -140,7 +141,7 @@ its input, and happily generates garbage output.  The @abbr{SCO} @samp{compress
 also allows some consistency checks.
 
 Files created by @command{zip} can be uncompressed by @command{gzip} only if
-they have a single member compressed with the 'deflation' method.  This
+they have a single member compressed with the ``deflation'' method.  This
 feature is only intended to help conversion of @file{tar.zip} files to
 the @file{tar.gz} format.  To extract a @command{zip} file with a single
 member, use a command like @samp{gunzip <foo.zip} or @samp{gunzip -S
@@ -153,11 +154,11 @@ input and writes the uncompressed data on standard output.  @command{zcat}
 will uncompress files that have the correct magic number whether they
 have a @samp{.gz} suffix or not.
 
-@command{gzip} uses the Lempel-Ziv algorithm used in @command{zip} and
+@command{gzip} uses the Lempel--Ziv algorithm used in @command{zip} and
 @abbr{PKZIP}@.
 The amount of compression obtained depends on the size of the input and
 the distribution of common substrings.  Typically, text such as source
-code or English is reduced by 60-70%.  Compression is generally much
+code or English is reduced by 60--70%.  Compression is generally much
 better than that achieved by @abbr{LZW} (as used in @command{compress}), Huffman
 coding (as used in @command{pack}), or adaptive Huffman coding
 (@command{compact}).
@@ -167,14 +168,14 @@ larger than the original.  The worst case expansion is a few bytes for
 the @command{gzip} file header, plus 5 bytes every 32K block, or an expansion
 ratio of 0.015% for large files.  Note that the actual number of used
 disk blocks almost never increases.  @command{gzip} normally preserves the mode,
-ownership and time stamps of files when compressing or decompressing.
+ownership and timestamps of files when compressing or decompressing.
 
-The @command{gzip} file format is specified in P. Deutsch, @sc{gzip} file
+The @command{gzip} file format is specified in P. Deutsch, GZIP file
 format specification version 4.3,
-@uref{http://www.ietf.org/rfc/rfc1952.txt, Internet @abbr{RFC} 1952} (May
+@uref{https://www.ietf.org/rfc/rfc1952.txt, Internet @abbr{RFC} 1952} (May
 1996).  The @command{zip} deflation format is specified in P. Deutsch,
-@sc{deflate} Compressed Data Format Specification version 1.3,
-@uref{http://www.ietf.org/rfc/rfc1951.txt, Internet @abbr{RFC} 1951} (May
+DEFLATE Compressed Data Format Specification version 1.3,
+@uref{https://www.ietf.org/rfc/rfc1951.txt, Internet @abbr{RFC} 1951} (May
 1996).
 
 @node Sample
@@ -198,11 +199,13 @@ Mandatory arguments to long options are mandatory for short options too.
   -k, --keep        keep (don't delete) input files
   -l, --list        list compressed file contents
   -L, --license     display software license
-  -n, --no-name     do not save or restore the original name and time stamp
-  -N, --name        save or restore the original name and time stamp
+  -n, --no-name     do not save or restore the original name and timestamp
+  -N, --name        save or restore the original name and timestamp
   -q, --quiet       suppress all warnings
   -r, --recursive   operate recursively on directories
+      --rsyncable   make rsync-friendly archive
   -S, --suffix=SUF  use suffix SUF on compressed files
+      --synchronous synchronous output (safer if system crashes, but slower)
   -t, --test        test compressed file integrity
   -v, --verbose     verbose mode
   -V, --version     display version number
@@ -306,7 +309,7 @@ displayed:
 @example
 method: compression method (deflate,compress,lzh,pack)
 crc: the 32-bit CRC of the uncompressed data
-date & time: time stamp for the uncompressed file
+date & time: timestamp for the uncompressed file
 @end example
 
 The @abbr{CRC} is given as ffffffff for a file not in gzip format.
@@ -331,20 +334,20 @@ Display the @command{gzip} license then quit.
 
 @item --no-name
 @itemx -n
-When compressing, do not save the original file name and time stamp by
+When compressing, do not save the original file name and timestamp by
 default.  (The original name is always saved if the name had to be
 truncated.)  When decompressing, do not restore the original file name
 if present (remove only the @command{gzip}
 suffix from the compressed file name) and do not restore the original
-time stamp if present (copy it from the compressed file).  This option
+timestamp if present (copy it from the compressed file).  This option
 is the default when decompressing.
 
 @item --name
 @itemx -N
-When compressing, always save the original file name and time stamp; this
+When compressing, always save the original file name and timestamp; this
 is the default.  When decompressing, restore the original file name and
-time stamp if present.  This option is useful on systems which have
-a limit on file name length or when the time stamp has been lost after
+timestamp if present.  This option is useful on systems which have
+a limit on file name length or when the timestamp has been lost after
 a file transfer.
 
 @item --quiet
@@ -357,6 +360,13 @@ Travel the directory structure recursively.  If any of the file names
 specified on the command line are directories, @command{gzip} will descend
 into the directory and compress all the files it finds there (or
 decompress them in the case of @command{gunzip}).
+
+@item --rsyncable
+Cater better to the @command{rsync} program by periodically resetting
+the internal structure of the compressed data stream.  This lets the
+@code{rsync} program take advantage of similarities in the uncompressed
+input when synchronizing two files compressed with this flag.  The cost:
+the compressed output is usually about one percent larger.
 
 @item --suffix @var{suf}
 @itemx -S @var{suf}
@@ -372,6 +382,16 @@ gunzip -S "" *        (*.* for MSDOS)
 
 Previous versions of gzip used the @samp{.z} suffix.  This was changed to
 avoid a conflict with @command{pack}.
+
+@item --synchronous
+Use synchronous output, by transferring output data to the output
+file's storage device when the file system supports this.  Because
+file system data can be cached, without this option if the system
+crashes around the time a command like @samp{gzip FOO} is run the user
+might lose both @file{FOO} and @file{FOO.gz}; this is the default with
+@command{gzip}, just as it is the default with most applications that
+move data.  When this option is used, @command{gzip} is safer but can
+be considerably slower.
 
 @item --test
 @itemx -t
@@ -468,18 +488,24 @@ complement to @command{tar}, not as a replacement.
 @chapter Environment
 @cindex Environment
 
-The environment variable @env{GZIP} can hold a set of default options for
-@command{gzip}.  These options are interpreted first and can be overwritten by
-explicit command line parameters.  For example:
+The obsolescent environment variable @env{GZIP} can hold a set of
+default options for @command{gzip}.  These options are interpreted
+first and can be overwritten by explicit command line parameters.  As
+this can cause problems when using scripts, this feature is supported
+only for options that are reasonably likely to not cause too much
+harm, and @command{gzip} warns if it is used.  This feature will be
+removed in a future release of @command{gzip}.
+
+You can use an alias or script instead.  For example, if
+@command{gzip} is in the directory @samp{/usr/bin} you can prepend
+@file{$HOME/bin} to your @env{PATH} and create an executable script
+@file{$HOME/bin/gzip} containing the following:
 
 @example
-for sh:    GZIP="-8v --name"; export GZIP
-for csh:   setenv GZIP "-8v --name"
-for MSDOS: set GZIP=-8v --name
+#! /bin/sh
+export PATH=/usr/bin
+exec gzip -9 "$@@"
 @end example
-
-On @abbr{VMS}, the name of the environment variable is @env{GZIP_OPT}, to
-avoid a conflict with the symbol set for invocation of the program.
 
 @node Tapes
 @chapter Using @command{gzip} on tapes
@@ -490,21 +516,8 @@ the output with zeroes up to a block boundary.  When the data is read and
 the whole block is passed to @command{gunzip} for decompression,
 @command{gunzip} detects that there is extra trailing garbage after the
 compressed data and emits a warning by default if the garbage contains
-nonzero bytes.  You have to use the
-@option{--quiet} option to suppress the warning.  This option can be set in the
-@env{GZIP} environment variable, as in:
-
-@example
-for sh:    GZIP="-q"  tar -xfz --block-compress /dev/rst0
-for csh:   (setenv GZIP "-q"; tar -xfz --block-compress /dev/rst0)
-@end example
-
-In the above example, @command{gzip} is invoked implicitly by the @option{-z}
-option of @acronym{GNU} @command{tar}.  Make sure that the same block
-size (@option{-b}
-option of @command{tar}) is used for reading and writing compressed data on
-tapes.  (This example assumes you are using the @acronym{GNU} version of
-@command{tar}.)
+nonzero bytes.  You can use the @option{--quiet} option to suppress
+the warning.
 
 @node Problems
 @chapter Reporting Bugs

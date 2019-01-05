@@ -1,0 +1,28 @@
+From 1252d056feaf71e7488cbaa5a78b3d45cd77f877 Mon Sep 17 00:00:00 2001
+From: Paul Eggert <eggert@cs.ucla.edu>
+Date: Sat, 4 Aug 2018 00:37:43 -0700
+Subject: [PATCH] gzip: port better to mingw again
+
+Problem reported by Bdale Garbee (Bug#32305#8).
+* gzip.c (do_chown): Use HAVE_FCHOWN || HAVE_CHOWN,
+which is configured, instead of DO_CHOWN, which is not.
+---
+ gzip.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gzip.c b/gzip.c
+index 02d5364..b26dd14 100644
+--- a/gzip.c
++++ b/gzip.c
+@@ -1923,7 +1923,7 @@ local int check_ofname()
+    the file and NAME its name.  Change it to user UID and to group GID.
+    If UID or GID is -1, though, do not change the corresponding user
+    or group.  */
+-#ifdef NO_CHOWN
++#if ! (HAVE_FCHOWN || HAVE_CHOWN)
+ /* The types uid_t and gid_t do not exist on mingw, so don't assume them.  */
+ # define do_chown(fd, name, uid, gid) ((void) 0)
+ #else
+-- 
+2.18.0
+

@@ -1,6 +1,6 @@
 /* tailor.h -- target dependent definitions
 
-   Copyright (C) 1997-1999, 2002, 2006, 2009-2013 Free Software Foundation,
+   Copyright (C) 1997-1999, 2002, 2006, 2009-2018 Free Software Foundation,
    Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -45,19 +45,14 @@
 #    define MAXSEG_64K
 #    ifdef __TURBOC__
 #      define off_t long
-#      define HAVE_UTIME_H
 #    else /* MSC */
 #      define HAVE_SYS_UTIME_H
 #    endif
 #  endif
-#  define PATH_SEP2 '\\'
-#  define PATH_SEP3 ':'
 #  define MAX_PATH_LEN  128
 #  define NO_MULTIPLE_DOTS
 #  define MAX_EXT_CHARS 3
 #  define Z_SUFFIX "z"
-#  define PROTO
-#  define STDC_HEADERS
 #  define NO_SIZE_CHECK
 #  define UNLINK_READONLY_BUG
 #  define casemap(c) tolow(c) /* Force file names to lower case */
@@ -72,8 +67,6 @@
 #endif
 
 #ifdef OS2
-#  define PATH_SEP2 '\\'
-#  define PATH_SEP3 ':'
 #  define MAX_PATH_LEN  260
 #  ifdef OS2FAT
 #    define NO_MULTIPLE_DOTS
@@ -81,8 +74,6 @@
 #    define Z_SUFFIX "z"
 #    define casemap(c) tolow(c)
 #  endif
-#  define PROTO
-#  define STDC_HEADERS
 #  define UNLINK_READONLY_BUG
 #  include <io.h>
 #  define OS_CODE  0x06
@@ -98,9 +89,6 @@
 #    define EXPAND(argc,argv) \
        {_response(&argc, &argv); _wildcard(&argc, &argv);}
 #  endif
-#  ifdef __BORLANDC__
-#    define HAVE_UTIME_H
-#  endif
 #  ifdef __ZTC__
 #    define NO_DIR 1
 #    include <dos.h>
@@ -109,13 +97,9 @@
 #  endif
 #endif
 
-#ifdef WIN32 /* Windows NT */
+#if defined WIN32 || defined _WIN32
 #  define HAVE_SYS_UTIME_H
-#  define PATH_SEP2 '\\'
-#  define PATH_SEP3 ':'
 #  define MAX_PATH_LEN  260
-#  define PROTO
-#  define STDC_HEADERS
 #  define SET_BINARY_MODE(fd) setmode(fd, O_BINARY)
 #  define UNLINK_READONLY_BUG
 #  include <io.h>
@@ -150,50 +134,9 @@
 #  define fcfree(ptr) free(ptr)
 #endif
 
-#if defined(VAXC) || defined(VMS)
-#  define PATH_SEP ']'
-#  define PATH_SEP2 ':'
-#  define SUFFIX_SEP ';'
-#  define NO_MULTIPLE_DOTS
-#  define NO_SIZE_CHECK
-#  define Z_SUFFIX "-gz"
-#  define RECORD_IO 1
-#  define casemap(c) tolow(c)
-#  define OS_CODE  0x02
-#  define OPTIONS_VAR "GZIP_OPT"
-#  define STDC_HEADERS
-#  define EXPAND(argc,argv) vms_expand_args(&argc,&argv);
-#  include <file.h>
-#  define unlink delete
-#  ifdef VAXC
-#    include <unixio.h>
-#  endif
-#endif
-
-#ifdef AMIGA
-#  define PATH_SEP2 ':'
-#  define STDC_HEADERS
-#  define OS_CODE  0x01
-#  define ASMV
-#  ifdef __GNUC__
-#    define HAVE_CHOWN
-#    define HAVE_LSTAT
-#  else /* SASC */
-#    define NO_STDIN_FSTAT
-#    define HAVE_SYS_DIR_H
-#    include <fcntl.h> /* for read() and write() */
-#    define direct dirent
-     extern void _expand_args(int *argc, char ***argv);
-#    define EXPAND(argc,argv) _expand_args(&argc,&argv);
-#  endif
-#endif
-
 #if defined(ATARI) || defined(atarist)
-#  define ASMV
 #  define OS_CODE  0x05
 #  ifdef TOSFS
-#    define PATH_SEP2 '\\'
-#    define PATH_SEP3 ':'
 #    define MAX_PATH_LEN  128
 #    define NO_MULTIPLE_DOTS
 #    define MAX_EXT_CHARS 3
@@ -202,21 +145,12 @@
 #  endif
 #endif
 
-#ifdef MACOS
-#  define PATH_SEP ':'
-#  define DYN_ALLOC
-#  define PROTO
-#  define NO_STDIN_FSTAT
-#  define chmod(file, mode) (0)
-#  define OPEN(name, flags, mode) open(name, flags)
-#  define OS_CODE  0x07
-#  ifdef MPW
-#    define isatty(fd) ((fd) <= 2)
-#  endif
-#endif
-
 #ifdef TOPS20
 #  define OS_CODE  0x0a
+#endif
+
+#ifndef SIGPIPE
+# define SIGPIPE 0
 #endif
 
 
@@ -224,10 +158,6 @@
 
 #ifndef OS_CODE
 #  define OS_CODE  0x03  /* assume Unix */
-#endif
-
-#ifndef PATH_SEP
-#  define PATH_SEP '/'
 #endif
 
 #ifndef casemap
@@ -265,14 +195,14 @@
 #  define EXPAND(argc,argv)
 #endif
 
-#ifndef RECORD_IO
-#  define RECORD_IO 0
-#endif
-
 #ifndef SET_BINARY_MODE
 #  define SET_BINARY_MODE(fd)
 #endif
 
-#ifndef OPEN
-#  define OPEN(name, flags, mode) open_safer (name, flags, mode)
+#ifndef FALLTHROUGH
+# if __GNUC__ < 7
+#  define FALLTHROUGH ((void) 0)
+# else
+#  define FALLTHROUGH __attribute__ ((__fallthrough__))
+# endif
 #endif
