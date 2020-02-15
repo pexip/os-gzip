@@ -97,10 +97,10 @@ input size or the available size on the output media. If input does
 not come from a regular disk file, the file modification time is set
 to the time at which compression started.
 
-The time stamp is useful mainly when one gzip file is transferred over
+The timestamp is useful mainly when one gzip file is transferred over
 a network. In this case it would not help to keep ownership
 attributes. In the local case, the ownership attributes are preserved
-by gzip when compressing/decompressing the file. A time stamp of zero
+by gzip when compressing/decompressing the file. A timestamp of zero
 is ignored.
 
 Bit 0 in the flags is only an optional indication, which can be set by
@@ -158,8 +158,8 @@ Compression", IEEE Transactions on Information Theory, Vol. 23, No. 3,
 May 1977, pp. 337-343.
 
 [RFC1952] Deutsch P., "GZIP file format specification version 4.3",
-Internet RFC 1952, May 1996, <http://www.ietf.org/rfc/rfc1952.txt>.
+Internet RFC 1952, May 1996, <https://www.ietf.org/rfc/rfc1952.txt>.
 
 APPNOTE.TXT documentation file in PKZIP 1.93a (October 1991).  This
 version no longer seems to be available online; the latest version is
-in <http://www.pkware.com/documents/casestudies/APPNOTE.TXT>.
+in <https://www.pkware.com/documents/casestudies/APPNOTE.TXT>.

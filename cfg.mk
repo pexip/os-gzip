@@ -1,5 +1,5 @@
 # Customize maint.mk                           -*- makefile -*-
-# Copyright (C) 2003-2013 Free Software Foundation, Inc.
+# Copyright (C) 2003-2018 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,26 +12,22 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Used in maint.mk's web-manual rule
 manual_title = gzip: the data compression program
+
+# Use the direct link.  This is guaranteed to work immediately, while
+# it can take a while for the faster mirror links to become usable.
+url_dir_list = https://ftp.gnu.org/gnu/$(PACKAGE)
 
 # Tests not to run as part of "make distcheck".
 local-checks-to-skip =		\
   sc_bindtextdomain		\
   sc_error_message_period	\
   sc_error_message_uppercase	\
-  sc_m4_quote_check		\
-  sc_obsolete_symbols		\
   sc_program_name		\
-  sc_prohibit_S_IS_definition	\
-  sc_prohibit_atoi_atof		\
-  sc_prohibit_stat_st_blocks	\
-  sc_space_tab			\
-  sc_texinfo_acronym		\
-  sc_useless_cpp_parens
-
+  sc_texinfo_acronym
 
 # Tools used to bootstrap this package, used for "announcement".
 bootstrap-tools = autoconf,automake,gnulib
@@ -39,7 +35,7 @@ bootstrap-tools = autoconf,automake,gnulib
 # Now that we have better tests, make this the default.
 export VERBOSE = yes
 
-old_NEWS_hash = cfb389be1b246e15a87a2272ad3736d7
+old_NEWS_hash = 143a1e2047fa15579bd66c75c7d962ce
 
 sc_obs_header_regex = \
   \<(STDC_HEADERS|HAVE_(LIMITS|STRING|UNISTD|STDLIB)_H)\>
@@ -64,6 +60,12 @@ sc_prohibit_emacs__indent_tabs_mode__setting:
 	halt='use of emacs indent-tabs-mode: setting'			\
 	  $(_sc_search_regexp)
 
+sc_gzip_copyright_check:
+	@require='Copyright \(C\) '$$(date +%Y)' Free'			\
+	in_vc_files=$(srcdir)/gzip.c					\
+	halt="out of date copyright in $$in_files; update it"		\
+	  $(_sc_search_regexp)
+
 include $(srcdir)/dist-check.mk
 
 exclude_file_name_regexp--sc_file_system = ^NEWS$$
@@ -75,6 +77,11 @@ exclude_file_name_regexp--sc_prohibit_empty_lines_at_EOF = \
   ^tests/hufts-segv\.gz$$
 exclude_file_name_regexp--sc_prohibit_strcmp = ^gzip\.c$$
 exclude_file_name_regexp--sc_prohibit_always-defined_macros = ^tailor\.h$$
+exclude_file_name_regexp--sc_prohibit_atoi_atof = ^(gzip|sample/sub)\.c$$
+exclude_file_name_regexp--sc_space_tab = ^lib/match\.c$$
+exclude_file_name_regexp--sc_useless_cpp_parens = ^(lib/match\.c|tailor\.h)$$
+
+exclude_file_name_regexp--sc_prohibit_double_semicolon = ^lib/match\.c$$
 
 # Tell the tight_scope rule that sources are in ".".
 export _gl_TS_dir = .

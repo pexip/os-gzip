@@ -1,6 +1,6 @@
 /* match.s -- optional optimized asm version of longest match in deflate.c
 
-   Copyright (C) 2002, 2006, 2009-2013 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2006, 2009-2018 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,11 @@
   error: DYN_ALLOC not yet supported in match.s
 #endif
 
-#if defined(i386) || defined(_I386) || defined(__i386) || defined(__i386__)
+/* On x86-64, Sun C 5.13 (Oracle Solaris Studio 12.4) 'cc -E -m64'
+   defines i386 when compiling .s or .S files!  Luckily it also
+   defines __x86_64__.  See Bug#23133.  */
+#if ((defined i386 || defined _I386 || defined __i386 || defined __i386__) \
+     && !defined __x86_64__)
 
 /* This version is for 386 Unix or OS/2 in 32 bit mode.
  * Warning: it uses the AT&T syntax: mov source,dest
@@ -227,7 +231,7 @@ maxmatch:
 #  define predec(An)		-(An)
 #  define postinc(An)		(An)+
 
-#else /* default style (Sun 3, NeXT, Amiga, Atari) */
+#else /* default style (Sun 3, NeXT, Atari) */
 
 #  define GLOBAL(symbol)	.globl	symbol
 #  define TEXT			.text

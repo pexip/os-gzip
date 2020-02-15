@@ -1,6 +1,6 @@
 # Make gzip (GNU zip).
 
-# Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2013 Free Software Foundation,
+# Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2018 Free Software Foundation,
 # Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -80,13 +80,13 @@ gzip.doc.gz: gzip.doc $(bin_PROGRAMS)
 
 SUFFIXES = .in
 .in:
-	$(AM_V_GEN)sed \
+	$(AM_V_GEN)rm -f $@-t $@ \
+          && sed \
 		-e 's|/bin/sh|$(SHELL)|g' \
-		-e 's|[@]bindir@|'\''$(bindir)'\''|g' \
 		-e 's|[@]GREP@|$(GREP)|g' \
 		-e 's|[@]VERSION@|$(VERSION)|g' \
 		$(srcdir)/$@.in >$@-t \
-	  && chmod a+x $@-t \
+	  && chmod a=rx $@-t \
 	  && mv $@-t $@
 
 # Arrange so that .tarball-version appears only in the distribution
@@ -99,25 +99,32 @@ gen_start_date = 2008-01-01
 gen-ChangeLog:
 	$(AM_V_GEN)if test -d .git; then				\
 	  $(top_srcdir)/build-aux/gitlog-to-changelog			\
-	    --since=$(gen_start_date) > $(distdir)/cl-t;		\
-	  rm -f $(distdir)/ChangeLog;					\
-	  mv $(distdir)/cl-t $(distdir)/ChangeLog;			\
+	    --since=$(gen_start_date) > $(distdir)/cl-t &&		\
+	    { rm -f $(distdir)/ChangeLog &&				\
+	      mv $(distdir)/cl-t $(distdir)/ChangeLog; }		\
 	fi
+
+# Prepend "." to $PATH:
+new_path = PATH=.$(PATH_SEPARATOR)$$PATH
 
 # A simple test, just of gzip -- more of a sanity check than anything else.
 FILES_TO_CHECK = $(bin_SCRIPTS) \
   $(top_srcdir)/ChangeLog $(top_srcdir)/configure $(top_srcdir)/gzip.c
 check-local: $(FILES_TO_CHECK) $(bin_PROGRAMS) gzip.doc.gz
-	{ test '$(srcdir)' != . || ./zdiff --__bindir . -c gzip.doc.gz; }
-	./zdiff --__bindir . -c $(srcdir)/gzip.doc $(srcdir)/gzip.doc
-	./zdiff --__bindir . $(srcdir)/gzip.doc gzip.doc.gz
-	./zdiff --__bindir . -c - $(srcdir)/gzip.doc <gzip.doc.gz
-	./zdiff --__bindir . -c gzip.doc.gz gzip.doc.gz
-	./zgrep --__bindir . -iV >/dev/null
-	for file in $(FILES_TO_CHECK); do \
-	  ./gzip -cv -- "$$file" | ./gzip -d | cmp - "$$file" || exit 1; \
+	$(AM_V_GEN)$(new_path); { test '$(srcdir)' != . \
+				    || zdiff gzip.doc.gz; }
+	$(AM_V_at)$(new_path); zdiff $(srcdir)/gzip.doc $(srcdir)/gzip.doc
+	$(AM_V_at)$(new_path); zdiff $(srcdir)/gzip.doc gzip.doc.gz
+	$(AM_V_at)$(new_path); zdiff - $(srcdir)/gzip.doc <gzip.doc.gz
+	$(AM_V_at)$(new_path); zdiff gzip.doc.gz gzip.doc.gz
+	$(AM_V_at)$(new_path); zgrep -iV >/dev/null
+	$(AM_V_at)$(new_path);				\
+	for opt in --rsyncable '' -1 -9; do		\
+          for file in $(FILES_TO_CHECK); do		\
+            gzip $$opt -c -- "$$file"			\
+              | gzip -d | cmp - "$$file" || exit 1;	\
+          done;						\
 	done
-	@echo 'Test succeeded.'
 
 install-exec-hook: remove-installed-links
 install-exec-hook remove-installed-links:

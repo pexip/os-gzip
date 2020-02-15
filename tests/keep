@@ -1,7 +1,7 @@
 #!/bin/sh
 # Exercise the --keep option.
 
-# Copyright (C) 2013 Free Software Foundation, Inc.
+# Copyright (C) 2013-2018 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # limit so don't run it by default.
 
 . "${srcdir=.}/init.sh"; path_prepend_ ..
@@ -40,5 +40,12 @@ for k in --keep ''; do
   compare in orig || fail=1
   rm -f in.gz || fail=1
 done
+
+cp orig in || framework_failure_
+log=$(gzip -kv in 2>&1) || fail=1
+case $log in
+  *'created in.gz'*) ;;
+  *) fail=1;;
+esac
 
 Exit $fail

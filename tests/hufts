@@ -1,7 +1,7 @@
 #!/bin/sh
 # Exercise a bug whereby an invalid input could make gzip -d misbehave.
 
-# Copyright (C) 2009-2013 Free Software Foundation, Inc.
+# Copyright (C) 2009-2018 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # limit so don't run it by default.
 
 . "${srcdir=.}/init.sh"; path_prepend_ ..
@@ -23,8 +23,7 @@ printf '\n...: invalid compressed data--format violated\n' > exp \
   || framework_failure_
 
 fail=0
-gzip -dc "$abs_srcdir/hufts-segv.gz" > out 2> err
-test $? = 1 || fail=1
+returns_ 1 gzip -dc "$abs_srcdir/hufts-segv.gz" > out 2> err || fail=1
 
 compare /dev/null out || fail=1
 

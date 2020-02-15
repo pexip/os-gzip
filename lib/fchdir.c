@@ -1,5 +1,5 @@
 /* fchdir replacement.
-   Copyright (C) 2006-2013 Free Software Foundation, Inc.
+   Copyright (C) 2006-2018 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,14 +12,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
 /* Specification.  */
 #include <unistd.h>
 
-#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -29,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "assure.h"
 #include "dosname.h"
 #include "filenamecat.h"
 
@@ -132,7 +132,7 @@ _gl_register_fd (int fd, const char *filename)
 {
   struct stat statbuf;
 
-  assert (0 <= fd);
+  assure (0 <= fd);
   if (REPLACE_OPEN_DIRECTORY
       || (fstat (fd, &statbuf) == 0 && S_ISDIR (statbuf.st_mode)))
     {
@@ -156,7 +156,7 @@ _gl_register_fd (int fd, const char *filename)
 int
 _gl_register_dup (int oldfd, int newfd)
 {
-  assert (0 <= oldfd && 0 <= newfd && oldfd != newfd);
+  assure (0 <= oldfd && 0 <= newfd && oldfd != newfd);
   if (oldfd < dirs_allocated && dirs[oldfd].name)
     {
       /* Duplicated a directory; must ensure newfd is allocated.  */
