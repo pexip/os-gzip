@@ -1,6 +1,6 @@
 /* unzip.c -- decompress files in gzip or pkzip format.
 
-   Copyright (C) 1997-1999, 2009-2013 Free Software Foundation, Inc.
+   Copyright (C) 1997-1999, 2009-2018 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -96,7 +96,7 @@ int check_zipfile(in)
     ext_header = (h[LOCFLG] & EXTFLG) != 0;
     pkzip = 1;
 
-    /* Get ofname and time stamp from local header (to be done) */
+    /* Get ofname and timestamp from local header (to be done) */
     return OK;
 }
 
@@ -143,7 +143,7 @@ int unzip(in, out)
 
         if (n != LG(inbuf + LOCSIZ) - (decrypt ? RAND_HEAD_LEN : 0)) {
 
-            fprintf(stderr, "len %ld, siz %ld\n", n, LG(inbuf + LOCSIZ));
+            fprintf(stderr, "len %lu, siz %lu\n", n, LG(inbuf + LOCSIZ));
             gzip_error ("invalid compressed data--length mismatch");
         }
         while (n--) {

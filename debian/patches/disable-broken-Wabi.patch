@@ -1,0 +1,12 @@
+diff --git a/m4/manywarnings.m4 b/m4/manywarnings.m4
+index dda3d46..71c2e1c 100644
+--- a/m4/manywarnings.m4
++++ b/m4/manywarnings.m4
+@@ -114,7 +114,6 @@ m4_defun([gl_MANYWARN_ALL_GCC(C)],
+   gl_manywarn_set=
+   for gl_manywarn_item in -fno-common \
+     -W \
+-    -Wabi \
+     -Waddress \
+     -Waggressive-loop-optimizations \
+     -Wall \

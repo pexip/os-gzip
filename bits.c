@@ -1,6 +1,6 @@
 /* bits.c -- output variable-length bit strings
 
-   Copyright (C) 1999, 2009-2013 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2009-2018 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -205,10 +205,6 @@ void copy_block(buf, len, header)
     bits_sent += (off_t)len<<3;
 #endif
     while (len--) {
-#ifdef CRYPT
-        int t;
-        if (key) zencode(*buf, t);
-#endif
         put_byte(*buf++);
     }
 }

@@ -10,9 +10,7 @@ export DH_VERBOSE=1
 shellescape='$(subst ','\'',$(1))'
 shellexport=$(1)=$(call shellescape,${$(1)})
 
-DEB_BUILD_ARCH=$(shell dpkg-architecture -qDEB_BUILD_ARCH)
-DEB_HOST_ARCH=$(shell dpkg-architecture -qDEB_HOST_ARCH)
-DEB_HOST_GNU_TYPE=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+include /usr/share/dpkg/architecture.mk
 
 # Automatic ${CC} selection for cross-compiles
 
@@ -26,6 +24,7 @@ CC=			gcc
 endif
 endif
 
+export DEFS=NO_ASM # Avoid TEXTRELs on i386
 EXTRA_CFLAGS=		-Wall
 EXTRA_CPPFLAGS=
 
@@ -79,7 +78,7 @@ configure-stamp: reconf-stamp
 	mkdir -p builddir
 	cd builddir && env \
 	    $(foreach i,CC CFLAGS CPPFLAGS LDFLAGS,$(call shellexport,$i)) \
-	    CONFIG_SHELL=/bin/sh ../configure ${CONFIGURE_ARGS}
+	    CONFIG_SHELL=/bin/sh GREP=grep ../configure ${CONFIGURE_ARGS}
 	:>$@
 
 configure-indep: configure-indep-stamp
@@ -120,12 +119,12 @@ binary: binary-arch binary-indep
 binary-indep: build-indep-stamp
 	dh_testdir
 	dh_testroot
-	if test -x "$$(which dh_prep)"; then dh_prep; else dh_clean -k; fi
+	dh_prep
 	dh_installdirs
 	i686-w64-mingw32-strip builddir-indep/gzip.exe
 	install -m 0755 builddir-indep/gzip.exe \
 	    debian/gzip-win32/usr/share/win32/
-	dh_installdocs -i README* TODO
+	dh_installdocs -i README* TODO NEWS
 	dh_installchangelogs -i ChangeLog
 	dh_lintian -i
 	dh_compress -i
@@ -138,32 +137,32 @@ binary-indep: build-indep-stamp
 binary-arch: build-stamp
 	dh_testdir
 	dh_testroot
-	if test -x "$$(which dh_prep)"; then dh_prep; else dh_clean -k; fi
+	dh_prep
 	dh_installdirs
 	${MAKE} -C builddir install \
 	    prefix=${_topdir}/debian/gzip/usr \
 	    bindir=${_topdir}/debian/gzip/bin
-	dh_testdir -s
-	dh_testroot -s
-	dh_installdocs -s README* TODO
+	dh_testdir -a
+	dh_testroot -a
+	dh_installdocs -a README* TODO NEWS
 	dh_installman *.1
-	dh_installinfo -s doc/gzip.info
-	dh_installchangelogs -s ChangeLog
-	dh_link -s
-	dh_lintian -s
-	dh_strip -s
-	dh_compress -s
+	dh_installinfo -a doc/gzip.info
+	dh_installchangelogs -a ChangeLog
+	dh_link -a
+	dh_lintian -a
+	dh_strip -a
+	dh_compress -a
 	ln -s gunzip.1.gz debian/gzip/usr/share/man/man1/uncompress.1.gz
 	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zegrep.1.gz
 	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zfgrep.1.gz
 	rm -f ${_topdir}/debian/gzip/usr/share/info/dir.gz
-	dh_fixperms -s
-	dh_makeshlibs -s
-	dh_installdeb -s
-	dh_shlibdeps -s
-	dh_gencontrol -s
-	dh_md5sums -s
-	dh_builddeb -s
+	dh_fixperms -a
+	dh_makeshlibs -a
+	dh_installdeb -a
+	dh_shlibdeps -a
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
 
 .PHONY: binary binary-arch binary-indep build build-arch build-indep clean
 .PHONY: configure configure-indep

@@ -1,6 +1,6 @@
 /* zip.c -- compress files to the gzip or pkzip format
 
-   Copyright (C) 1997-1999, 2006-2007, 2009-2013 Free Software Foundation, Inc.
+   Copyright (C) 1997-1999, 2006-2007, 2009-2018 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -22,9 +22,6 @@
 
 #include "tailor.h"
 #include "gzip.h"
-
-#include <unistd.h>
-#include <fcntl.h>
 
 local ulg crc;       /* crc on uncompressed file data */
 off_t header_bytes;   /* number of bytes in gzip header */
@@ -57,9 +54,17 @@ int zip(in, out)
         flags |= ORIG_NAME;
     }
     put_byte(flags);         /* general flags */
-    stamp = (0 <= time_stamp.tv_sec && time_stamp.tv_sec <= 0xffffffff
-             ? (ulg) time_stamp.tv_sec
-             : (ulg) 0);
+    if (time_stamp.tv_nsec < 0)
+      stamp = 0;
+    else if (0 < time_stamp.tv_sec && time_stamp.tv_sec <= 0xffffffff)
+      stamp = time_stamp.tv_sec;
+    else
+      {
+        /* It's intended that timestamp 0 generates this warning,
+           since gzip format reserves 0 for something else.  */
+        warning ("file timestamp out of range for gzip format");
+        stamp = 0;
+      }
     put_long (stamp);
 
     /* Write deflated file to zip file */
@@ -83,8 +88,8 @@ int zip(in, out)
     (void)deflate();
 
 #ifndef NO_SIZE_CHECK
-  /* Check input size (but not in VMS -- variable record lengths mess it up)
-   * and not on MSDOS -- diet in TSR mode reports an incorrect file size)
+  /* Check input size
+   * (but not on MSDOS -- diet in TSR mode reports an incorrect file size)
    */
     if (ifile_size != -1L && bytes_in != ifile_size) {
         fprintf(stderr, "%s: %s: file size changed while zipping\n",

@@ -1,5 +1,92 @@
 GNU gzip NEWS                                    -*- outline -*-
 
+* Noteworthy changes in release 1.9 (2018-01-07) [stable]
+
+** Bug fixes
+
+  gzip -d -S SUFFIX file.SUFFIX would fail for any upper-case byte in SUFFIX.
+  E.g., before, this command would fail:
+    $ :|gzip > kT && gzip -d -S T kT
+    gzip: kT: unknown suffix -- ignored
+  [bug present since the beginning]
+
+  When decompressing data in 'pack' format, gzip no longer mishandles
+  leading zeros in the end-of-block code.  [bug introduced in gzip-1.6]
+
+  When converting from system-dependent time_t format to the 32-bit
+  unsigned MTIME format used in gzip files, if a timestamp does not
+  fit gzip now substitutes zero instead of the timestamp's low-order
+  32 bits, as per Internet RFC 1952.  When converting from MTIME to
+  time_t format, if a timestamp does not fit gzip now warns and
+  substitutes the nearest in-range value instead of crashing or
+  silently substituting an implementation-defined value (typically,
+  the timestamp's low-order bits).  This affects timestamps before
+  1970 and after 2106, and timestamps after 2038 on platforms with
+  32-bit signed time_t.  [bug present since the beginning]
+
+  Commands implemented via shell scripts are now more consistent about
+  failure status.  For example, 'gunzip --help >/dev/full' now
+  consistently exits with status 1 (error), instead of with status 2
+  (warning) on some platforms.  [bug present since the beginning]
+
+  Support for VMS and Amiga has been removed.  It was not working anyway,
+  and it reportedly caused file name glitches on MS-Windowsish platforms.
+
+
+* Noteworthy changes in release 1.8 (2016-04-26) [stable]
+
+** Bug fixes
+
+  gzip -l no longer falsely reports a write error when writing to a pipe.
+  [bug introduced in gzip-1.7]
+
+  Port to Oracle Solaris Studio 12 on x86-64.
+  [bug present since at least gzip-1.2.4]
+
+  When configuring gzip, ./configure DEFS='...-DNO_ASM...' now
+  suppresses assembler again.  [bug introduced in gzip-1.3.5]
+
+
+* Noteworthy changes in release 1.7 (2016-03-27) [stable]
+
+** Changes in behavior
+
+  The GZIP environment variable is now obsolescent; gzip now warns if
+  it is used, and rejects attempts to use dangerous options or operands.
+  You can use an alias or script instead.
+
+  Installed programs like 'zgrep' now use the PATH environment variable
+  as usual to find subsidiary programs like 'gzip' and 'grep'.
+  Previously they prepended the installation directory to the PATH,
+  which sometimes caused 'make check' to test the wrong gzip executable.
+  [bug introduced in gzip-1.3.13]
+
+** New features
+
+  gzip now accepts the --synchronous option, which causes it to use
+  fsync and similar primitives to transfer output data to the output
+  file's storage device when the file system supports this.  Although
+  this option makes gzip safer in the presence of system crashes, it
+  can make gzip considerably slower.
+
+  gzip now accepts the --rsyncable option. This option is accepted in
+  all modes, but has effect only when compressing: it makes the resulting
+  output more amenable to efficient use of rsync.  For example, when a
+  large input file gets a small change, a gzip --rsyncable image of
+  that file will remain largely unchanged, too.  Without --rsyncable,
+  even a tiny change in the input could result in a totally different
+  gzip-compressed output file.
+
+** Bug fixes
+
+  gzip -k -v no longer reports that files are replaced.
+  [bug present since the beginning]
+
+  zgrep -f A B C no longer reads A more than once if A is not a regular file.
+  This better supports invocations like 'zgrep -f <(COMMAND) B C' in Bash.
+  [bug introduced in gzip-1.2]
+
+
 * Noteworthy changes in release 1.6 (2013-06-09) [stable]
 
 ** New features
@@ -54,7 +141,7 @@ GNU gzip NEWS                                    -*- outline -*-
   gzip -d could segfault and/or clobber the stack, possibly leading to
   arbitrary code execution.  This affects x86_64 but not 32-bit systems.
   This fixes CVE-2010-0001.
-  For more details, see http://bugzilla.redhat.com/554418
+  For more details, see https://bugzilla.redhat.com/554418
 
   gzip -d would fail with a CRC error for some valid inputs.
   So far, the only valid input known to exhibit this failure was
@@ -154,10 +241,10 @@ Major changes in Gzip 1.3.7 (2006-12-06)
 
 Major changes in Gzip 1.3.6 (2006-11-20)
 
-* Fix some race conditions in setting file time stamps, permissions, and owner.
+* Fix some race conditions in setting file timestamps, permissions, and owner.
 * Fix some race conditions in signal handling.
 * When gzip exits due to a signal, it exits with the signal's status, not 1.
-* gzip now restores file time stamps to the resolution supported by the
+* gzip now restores file timestamps to the resolution supported by the
   time-setting primitives of the operating system, typically 1 microsecond.
   Formerly it restored them only to the nearest second.
 * gzip -r no longer attempts to reset the last-access times of directories
@@ -290,7 +377,7 @@ Major changes from 1.0.7 to 1.1.
 * Added comparison of zip and gzip in the readme file.
 * Added small sample programs (ztouch, sub, add)
 * Use less memory when compiled with -DSMALL_MEM (for MSDOS).
-* Remove the "off by more than one minute" time stamp kludge
+* Remove the "off by more than one minute" timestamp kludge
 
 Major changes from 1.0.6 to 1.0.7.
 * Allow zmore to read from standard input (like more).
@@ -369,7 +456,7 @@ Major changes from 1.0.1 to 1.0.2
   on such systems.
 * Added gzexe to compress rarely used executables.
 * Reduce memory usage (required for MSDOS and useful on all systems).
-* Preserve time stamp in znew -P (pipe option) if touch -r works.
+* Preserve timestamp in znew -P (pipe option) if touch -r works.
 
 
 Major changes from 1.0 to 1.0.1
@@ -410,7 +497,7 @@ Major changes from 0.7 to 0.8:
 
 Major changes from 0.6 to 0.7:
 * Use "make check" instead of "make test".
-* Keep time stamp and pass options to gzip in znew.
+* Keep timestamp and pass options to gzip in znew.
 * Do not create .z.z files with gzip -r.
 * Allow again gunzip .zip files (was working in 0.5)
 * Allow again compilation with TurboC 2.0 (was working in 0.4)
@@ -430,7 +517,7 @@ Major changes form 0.5 to 0.6:
 
 ========================================================================
 
-Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2013 Free Software Foundation,
+Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2018 Free Software Foundation,
 Inc.
 Copyright (C) 1992, 1993 Jean-loup Gailly
 

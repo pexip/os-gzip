@@ -1,6 +1,6 @@
 /* gzip.h -- common declarations for all gzip modules
 
-   Copyright (C) 1997-1999, 2001, 2006-2007, 2009-2013 Free Software
+   Copyright (C) 1997-1999, 2001, 2006-2007, 2009-2018 Free Software
    Foundation, Inc.
 
    Copyright (C) 1992-1993 Jean-loup Gailly.
@@ -31,10 +31,6 @@
 # endif
 #endif
 
-#ifndef ATTRIBUTE_NORETURN
-# define ATTRIBUTE_NORETURN __attribute__ ((__noreturn__))
-#endif
-
 /* I don't like nested includes, but the following headers are used
  * too often
  */
@@ -42,6 +38,7 @@
 #include <sys/types.h> /* for off_t */
 #include <time.h>
 #include <string.h>
+#include <stdnoreturn.h>
 #define memzero(s, n) memset ((voidp)(s), 0, (n))
 
 #ifndef RETSIGTYPE
@@ -140,6 +137,7 @@ EXTERN(uch, window);         /* Sliding window and suffix table (unlzw) */
 extern unsigned insize; /* valid bytes in inbuf */
 extern unsigned inptr;  /* index of next byte to be processed in inbuf */
 extern unsigned outcnt; /* bytes in output buffer */
+extern int rsync;  /* deflate into rsyncable chunks */
 
 extern off_t bytes_in;   /* number of input bytes */
 extern off_t bytes_out;  /* number of output bytes */
@@ -151,7 +149,7 @@ extern char ifname[];   /* input file name or "stdin" */
 extern char ofname[];   /* output file name or "stdout" */
 extern char *program_name;  /* program name */
 
-extern struct timespec time_stamp; /* original time stamp (modification time) */
+extern struct timespec time_stamp; /* original timestamp (modification time) */
 extern off_t ifile_size; /* input file size, -1 for devices (debug only) */
 
 typedef int file_t;     /* Do not use stdio */
@@ -278,7 +276,7 @@ extern int unpack     (int in, int out);
 extern int unlzh      (int in, int out);
 
         /* in gzip.c */
-extern void abort_gzip (void) ATTRIBUTE_NORETURN;
+extern noreturn void abort_gzip (void);
 
         /* in deflate.c */
 extern void lm_init (int pack_level, ush *flags);
@@ -287,7 +285,7 @@ extern off_t deflate (void);
         /* in trees.c */
 extern void ct_init     (ush *attr, int *method);
 extern int  ct_tally    (int dist, int lc);
-extern off_t flush_block (char *buf, ulg stored_len, int eof);
+extern off_t flush_block (char *buf, ulg stored_len, int pad, int eof);
 
         /* in bits.c */
 extern void     bi_init    (file_t zipfile);
@@ -311,11 +309,11 @@ extern char *gzip_base_name (char *fname) _GL_ATTRIBUTE_PURE;
 extern int xunlink        (char *fname);
 extern void make_simple_name (char *name);
 extern char *add_envopt   (int *argcp, char ***argvp, char const *env);
-extern void gzip_error    (char const *m) ATTRIBUTE_NORETURN;
-extern void xalloc_die    (void) ATTRIBUTE_NORETURN;
+extern noreturn void gzip_error    (char const *m);
+extern noreturn void xalloc_die    (void);
 extern void warning       (char const *m);
-extern void read_error    (void) ATTRIBUTE_NORETURN;
-extern void write_error   (void) ATTRIBUTE_NORETURN;
+extern noreturn void read_error    (void);
+extern noreturn void write_error   (void);
 extern void display_ratio (off_t num, off_t den, FILE *file);
 extern void fprint_off    (FILE *, off_t, int);
 

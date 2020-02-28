@@ -1,6 +1,6 @@
 /* Provide a more complete sys/time.h.
 
-   Copyright (C) 2007-2013 Free Software Foundation, Inc.
+   Copyright (C) 2007-2018 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert.  */
 
@@ -24,11 +24,12 @@
 #endif
 @PRAGMA_COLUMNS@
 
-/* On Cygwin, <sys/time.h> includes itself recursively via <sys/select.h>.
+/* On Cygwin and on many BSDish systems, <sys/time.h> includes itself
+   recursively via <sys/select.h>.
    Simply delegate to the system's header in this case; it is a no-op.
    Without this extra ifdef, the C++ gettimeofday declaration below
    would be a forward declaration in gnulib's nested <sys/time.h>.  */
-#ifdef _CYGWIN_SYS_TIME_H
+#if defined _CYGWIN_SYS_TIME_H || defined _SYS_TIME_H || defined _SYS_TIME_H_
 # @INCLUDE_NEXT@ @NEXT_SYS_TIME_H@
 #else
 
@@ -108,6 +109,13 @@ _GL_CXXALIAS_SYS_CAST (gettimeofday, int,
                        (struct timeval *restrict, void *restrict));
 # endif
 _GL_CXXALIASWARN (gettimeofday);
+# if defined __cplusplus && defined GNULIB_NAMESPACE
+namespace GNULIB_NAMESPACE {
+  typedef ::timeval
+#undef timeval
+    timeval;
+}
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef gettimeofday
 # if HAVE_RAW_DECL_GETTIMEOFDAY
