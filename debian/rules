@@ -25,28 +25,17 @@ endif
 endif
 
 export DEFS=NO_ASM # Avoid TEXTRELs on i386
-EXTRA_CFLAGS=		-Wall
-EXTRA_CPPFLAGS=
+DEB_CFLAGS_MAINT_APPEND := -Wall
 
-ifeq (${DEB_HOST_ARCH},amd64)
-EXTRA_CPPFLAGS+=	-DUNALIGNED_OK
+ifeq ($(buildarch), amd64)
+DEB_CPPFLAGS_MAINT_APPEND := -DUNALIGNED_OK
 endif
 
 # Automatic dpkg-buildflags selection, backport-friendly
 
-ifneq (,$(wildcard /usr/share/dpkg/buildflags.mk))
-# dpkg-dev (>= 1.16.1~)
-DEB_CFLAGS_MAINT_APPEND=${EXTRA_CFLAGS}
-DEB_CPPFLAGS_MAINT_APPEND=${EXTRA_CPPFLAGS}
 # maybe turn this on later
 #DEB_BUILD_MAINT_OPTIONS=hardening=+all
 include /usr/share/dpkg/buildflags.mk
-else
-# old-fashioned way to determine build flags
-CFLAGS=			-O$(if $(findstring noopt,${DEB_BUILD_OPTIONS}),0,2) -g
-CFLAGS+=		${EXTRA_CFLAGS}
-LDFLAGS+=		${EXTRA_LDFLAGS}
-endif
 
 # maybe turn this on later
 #ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
@@ -60,7 +49,8 @@ _topdir=$(call shellescape,$(shell pwd))
 CONFIGURE_ARGS=		--prefix=/usr \
 			--bindir=/bin \
 			--infodir=${_topdir}/debian/gzip/usr/share/info \
-			--mandir=${_topdir}/debian/gzip/usr/share/man
+			--mandir=${_topdir}/debian/gzip/usr/share/man \
+			--disable-silent-rules
 
 ifneq (${DEB_BUILD_ARCH},${DEB_HOST_ARCH})
 CONFIGURE_ARGS+=	--host=${DEB_HOST_GNU_TYPE}
@@ -75,8 +65,6 @@ reconf-stamp:
 configure: configure-stamp
 configure-stamp: reconf-stamp
 	dh_testdir
-	chmod 775 tests/zgrep-abuse
-	chmod 775 tests/zgrep-binary
 	mkdir -p builddir
 	cd builddir && env \
 	    $(foreach i,CC CFLAGS CPPFLAGS LDFLAGS,$(call shellexport,$i)) \
@@ -86,10 +74,9 @@ configure-stamp: reconf-stamp
 configure-indep: configure-indep-stamp
 configure-indep-stamp: reconf-stamp
 	dh_testdir
-	chmod 775 tests/zgrep-abuse
-	chmod 775 tests/zgrep-binary
 	mkdir -p builddir-indep
-	cd builddir-indep && ../configure --host=i686-w64-mingw32
+	cd builddir-indep && ../configure --host=i686-w64-mingw32 \
+		LIBS="-Wl,-Bstatic -lssp" --disable-silent-rules
 	:>$@
 
 build: build-stamp build-indep-stamp

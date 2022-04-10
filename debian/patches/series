@@ -1,9 +1,7 @@
 sigpipe.diff
 gzip_reproducible_build.diff
 zgrep-syntax-error.diff
-0001-gzip-port-better-to-mingw.patch
-0001-gzip-port-better-to-mingw-again.patch
-gnulib-4af4a4a71827c0bc5.patch
-disable-broken-Wabi.patch
 disable-Werror.patch
+gzexe-fix-count-of-lines-to-skip.patch
+skip-out-of-range-timestamp-test-mips64el.patch
 CVE-2022-1271.patch

@@ -1,4 +1,151 @@
+2018-12-29  Jim Meyering  <meyering@fb.com>
+
+	version 1.10
+	* NEWS: Record release date.
+
+2018-12-23  Paul Eggert  <eggert@cs.ucla.edu>
+
+	build: enable -Wunreachable-code
+	* configure.ac (nw): Remove -Wunreachable-code from the list of
+	disabled warnings, now that all offending statements have been removed.
+
+	maint: remove unreachable code
+	Problem reported by Oracle Developer Studio 12.6.
+	In the old days we needed a return statement at the end of
+	the gzip main function to pacify traditional 'lint', but
+	lint checkers nowadays are smarter.
+	* gzip.c (main):
+	* zip.c (file_read): Remove unreachable code.
+
+2018-12-23  Jim Meyering  <meyering@fb.com>
+
+	maint: use a slightly cleaner expression
+	* gzip.c (do_list): Simplify an expression:
+	- int positive_off_t_width = INT_BUFSIZE_BOUND (off_t) - 2;
+	+ int positive_off_t_width = INT_STRLEN_BOUND (off_t) - 1;
+
+2018-12-22  Jim Meyering  <meyering@fb.com>
+
+	build: avoid build failure with --enable-gcc-warnings and latest gcc
+	* gzip.c (do_list): There was a loop to compute the maximum width
+	of a decimal positive off_t value. Replace it with assignment to a
+	constant.  Noticed because gcc 9.0.0 20181219 warned about its use
+	as a printf format-width value.
+	(OFF_T_MAX): Remove now-unused definition.
+
+2018-12-21  Jim Meyering  <meyering@fb.com>
+
+	maint: improve a comment
+	* trees.c (flush_block): Fix grammar/spelling in a comment.
+
+	maint: update gnulib to latest; also update bootstrap and init.sh
+
+	build: make the autoconf-2.63 requirement explicit
+	* configure.ac: AC_PREREQ: Require 2.63, not 2.59.
+	Autoconf-2.63 has been required for some time via gnulib.
+	This merely makes it explicit.
+
+2018-11-30  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: fix use of uninitialized memory
+	Problem reported by Hanno Böck (Bug#33501).
+	* NEWS: Mention this.
+	* inflate.c (inflate_dynamic): Return if code is invalid.
+	Fix by Mark Adler.
+	* tests/hufts: Add test case for the bug.
+
+2018-08-19  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* gzip.c (remove_output_file): Fix typo.
+
+	gzip: fix bug in signal-handling fix
+	Problem reported by Johannes Przybilla (Bug#32375#26).
+	* gzip.c (volatile_strcpy): Source is now pointer-to-volatile too.
+	(remove_output_file): Copy remove_ofname to a private nonvolatile
+	copy so that it can be passed to xunlink safely.
+
+2018-08-06  Paul Eggert  <eggert@cs.ucla.edu>
+
+	Fix some theoretical races in signal handling
+	Problem reported by Johannes Przybilla (Bug#32375).
+	* NEWS: Mention this.
+	* bootstrap.conf (gnulib_modules): Add sigaction.
+	* gzip.c (SA_NOCLDSTOP, sigprocmask, sigset_t)
+	(siginterrupt) [!SA_NOCLDSTOP]: Remove; Gnulib not supplies these.
+	(remove_ofname): New var.
+	(volatile_strcpy): New function.
+	(create_outfile): Use it.
+	(install_signal_handlers, abort_gzip_signal): Assume sigaction.
+	(remove_output_file): New arg SIGNALS_ALREADY_BLOCKED.
+	All uses changed.  Avoid unnecessary (and racy) call
+	to sigprocmask if this new arg is set.
+	(abort_gzip_signal): Assume C89 or better for signal handler type.
+	* gzip.h (RETSIGTYPE): Remove.
+	* lib/.gitignore, m4/.gitignore:
+	Add files brought in by Gnulib sigaction module.  Sort.
+
+2018-08-04  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: port better to mingw again
+	Problem reported by Bdale Garbee (Bug#32305#8).
+	* gzip.c (do_chown): Use HAVE_FCHOWN || HAVE_CHOWN,
+	which is configured, instead of DO_CHOWN, which is not.
+
+2018-08-02  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: make the output more reproducible
+	Problem reported by Bernhard M. Wiedemann (Bug#32342).
+	* NEWS: Mention this.
+	* doc/gzip.texi (Overview, Invoking gzip): Document this.
+	* gzip.c (get_input_size_and_time): New function,
+	which implements the change.
+	(treat_stdin, treat_file): Use it.
+	* tests/reproducible: New test.
+	* tests/Makefile.am (TESTS): Add it.
+
+2018-07-29  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: port better to mingw
+	Problem reported by Bdale Garbee for Debian
+	* gzip.c (do_chown): Don't assume uid_t and gid_t.
+
+2018-07-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update gnulib to latest; also update bootstrap and init.sh
+
+2018-06-30  Jim Meyering  <meyering@fb.com>
+
+	build: remove -Wformat-truncation=2 to avoid avoid false-positive
+	* configure.ac (GNULIB_WARN_CFLAGS): Add -Wformat-truncation=2,
+	to disable it when building gnulib with --enable-gcc-warnings.
+	This avoids what looks like a false positive from GCC 9:
+	strerror_r.c: In function 'rpl_strerror_r':
+	strerror_r.c:453:35: error: 'Unknown error ' directive output \
+	 truncated writing 14 bytes into a region of size 2 \
+	 [-Werror=format-truncation=]
+	         snprintf (buf, buflen, "Unknown error %d", errnum);
+	                                 ~~^~~~~~~~~~~~
+	In file included from /usr/include/stdio.h:862,
+	                 from ./stdio.h:43,
+	                 from strerror_r.c:29:
+	/usr/include/bits/stdio2.h:64:10: note: '__builtin___snprintf_chk' \
+	  output between 16 and 26 bytes into a destination of size 2
+	   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+
+2018-01-15  Paul Eggert  <eggert@cs.ucla.edu>
+
+	misc: update --version copyright
+	* gunzip.in, gzexe.in, gzip.c, zcat.in, zdiff.in, zforce.in, zgrep.in:
+	* zless.in, zmore.in, znew.in:
+	Update copyright year in --version output to 2018.
+	This part of the year-number update isn’t automated yet.
+
 2018-01-07  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
 
 	version 1.9
 	* NEWS: Record release date.

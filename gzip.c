@@ -29,7 +29,7 @@
  */
 
 static char const *const license_msg[] = {
-"Copyright (C) 2017 Free Software Foundation, Inc.",
+"Copyright (C) 2018 Free Software Foundation, Inc.",
 "Copyright (C) 1993 Jean-loup Gailly.",
 "This is free software.  You may redistribute copies of it under the terms of",
 "the GNU General Public License <https://www.gnu.org/licenses/gpl.html>.",
@@ -115,21 +115,6 @@ static char const *const license_msg[] = {
   off_t lseek (int fd, off_t offset, int whence);
 #endif
 
-#ifndef OFF_T_MAX
-# define OFF_T_MAX TYPE_MAXIMUM (off_t)
-#endif
-
-/* Use SA_NOCLDSTOP as a proxy for whether the sigaction machinery is
-   present.  */
-#ifndef SA_NOCLDSTOP
-# define SA_NOCLDSTOP 0
-# define sigprocmask(how, set, oset) /* empty */
-# define sigset_t int
-# if ! HAVE_SIGINTERRUPT
-#  define siginterrupt(sig, flag) /* empty */
-# endif
-#endif
-
 #ifndef HAVE_WORKING_O_NOFOLLOW
 # define HAVE_WORKING_O_NOFOLLOW 0
 #endif
@@ -211,8 +196,10 @@ static sigset_t caught_signals;
    suppresses a "Broken Pipe" message with some shells.  */
 static int volatile exiting_signal;
 
-/* If nonnegative, close this file descriptor and unlink ofname on error.  */
+/* If nonnegative, close this file descriptor and unlink remove_ofname
+   on error.  */
 static int volatile remove_ofname_fd = -1;
+static char volatile remove_ofname[MAX_PATH_LEN];
 
 static bool stdin_was_read;
 
@@ -323,8 +310,8 @@ local void do_list      (int ifd, int method);
 local int  check_ofname (void);
 local void copy_stat    (struct stat *ifstat);
 local void install_signal_handlers (void);
-local void remove_output_file (void);
-local RETSIGTYPE abort_gzip_signal (int);
+static void remove_output_file (bool);
+static void abort_gzip_signal (int);
 local noreturn void do_exit (int exitcode);
 static void finish_out (void);
       int main          (int argc, char **argv);
@@ -692,7 +679,6 @@ int main (int argc, char **argv)
         && errno != EBADF)
       write_error ();
     do_exit(exit_code);
-    return exit_code; /* just to avoid lint warning */
 }
 
 /* Return nonzero when at end of file on input.  */
@@ -712,6 +698,25 @@ input_eof ()
     }
 
   return 0;
+}
+
+static void
+get_input_size_and_time (void)
+{
+  ifile_size = -1;
+  time_stamp.tv_nsec = -1;
+
+  /* Record the input file's size and timestamp only if it is a
+     regular file.  Doing this for the timestamp helps to keep gzip's
+     output more reproducible when it is used as part of a
+     pipeline.  */
+
+  if (S_ISREG (istat.st_mode))
+    {
+      ifile_size = istat.st_size;
+      if (!no_time || list)
+        time_stamp = get_stat_mtime (&istat);
+    }
 }
 
 /* ========================================================================
@@ -761,15 +766,8 @@ local void treat_stdin()
         progerror ("standard input");
         do_exit (ERROR);
       }
-    ifile_size = S_ISREG (istat.st_mode) ? istat.st_size : -1;
-    time_stamp.tv_nsec = -1;
-    if (!no_time || list)
-      {
-        if (S_ISREG (istat.st_mode))
-          time_stamp = get_stat_mtime (&istat);
-        else
-          gettime (&time_stamp);
-      }
+
+    get_input_size_and_time ();
 
     clear_bufs(); /* clear input and output buffers */
     to_stdout = 1;
@@ -941,10 +939,7 @@ local void treat_file(iname)
           }
       }
 
-    ifile_size = S_ISREG (istat.st_mode) ? istat.st_size : -1;
-    time_stamp.tv_nsec = -1;
-    if (!no_time || list)
-      time_stamp = get_stat_mtime (&istat);
+    get_input_size_and_time ();
 
     /* Generate output file name. For -r and (-t or -l), skip files
      * without a valid gzip suffix (check done in make_ofname).
@@ -1053,7 +1048,7 @@ local void treat_file(iname)
 
     if (method == -1) {
         if (!to_stdout)
-          remove_output_file ();
+          remove_output_file (false);
         return;
     }
 
@@ -1071,6 +1066,13 @@ local void treat_file(iname)
                   ofname);
         fprintf(stderr, "\n");
     }
+}
+
+static void
+volatile_strcpy (char volatile *dst, char const volatile *src)
+{
+  while ((*dst++ = *src++))
+    continue;
 }
 
 /* ========================================================================
@@ -1105,6 +1107,8 @@ local int create_outfile()
     {
       int open_errno;
       sigset_t oldset;
+
+      volatile_strcpy (remove_ofname, ofname);
 
       sigprocmask (SIG_BLOCK, &caught_signals, &oldset);
       remove_ofname_fd = ofd = openat (atfd, base, flags, S_IRUSR | S_IWUSR);
@@ -1728,12 +1732,7 @@ local void do_list(ifd, method)
         "lzh  ",  /* 3 */
         "", "", "", "", /* 4 to 7 reserved */
         "defla"}; /* 8 */
-    int positive_off_t_width = 1;
-    off_t o;
-
-    for (o = OFF_T_MAX;  9 < o;  o /= 10) {
-        positive_off_t_width++;
-    }
+    int positive_off_t_width = INT_STRLEN_BOUND (off_t) - 1;
 
     if (first_time && method >= 0) {
         first_time = 0;
@@ -1914,17 +1913,20 @@ local int check_ofname()
    the file and NAME its name.  Change it to user UID and to group GID.
    If UID or GID is -1, though, do not change the corresponding user
    or group.  */
+#if ! (HAVE_FCHOWN || HAVE_CHOWN)
+/* The types uid_t and gid_t do not exist on mingw, so don't assume them.  */
+# define do_chown(fd, name, uid, gid) ((void) 0)
+#else
 static void
 do_chown (int fd, char const *name, uid_t uid, gid_t gid)
 {
-#ifndef NO_CHOWN
 # if HAVE_FCHOWN
   ignore_value (fchown (fd, uid, gid));
 # else
   ignore_value (chown (name, uid, gid));
 # endif
-#endif
 }
+#endif
 
 /* ========================================================================
  * Copy modes, times, ownership from input file to output file.
@@ -2049,8 +2051,6 @@ install_signal_handlers ()
 {
   int nsigs = sizeof handled_sig / sizeof handled_sig[0];
   int i;
-
-#if SA_NOCLDSTOP
   struct sigaction act;
 
   sigemptyset (&caught_signals);
@@ -2072,16 +2072,6 @@ install_signal_handlers ()
           foreground = 1;
         sigaction (handled_sig[i], &act, NULL);
       }
-#else
-  for (i = 0; i < nsigs; i++)
-    if (signal (handled_sig[i], SIG_IGN) != SIG_IGN)
-      {
-        if (i == 0)
-          foreground = 1;
-        signal (handled_sig[i], abort_gzip_signal);
-        siginterrupt (handled_sig[i], 1);
-      }
-#endif
 }
 
 /* ========================================================================
@@ -2121,42 +2111,43 @@ finish_out (void)
  * Close and unlink the output file.
  */
 static void
-remove_output_file ()
+remove_output_file (bool signals_already_blocked)
 {
   int fd;
   sigset_t oldset;
 
-  sigprocmask (SIG_BLOCK, &caught_signals, &oldset);
+  if (!signals_already_blocked)
+    sigprocmask (SIG_BLOCK, &caught_signals, &oldset);
   fd = remove_ofname_fd;
   if (0 <= fd)
     {
+      char fname[MAX_PATH_LEN];
       remove_ofname_fd = -1;
       close (fd);
-      xunlink (ofname);
+      volatile_strcpy (fname, remove_ofname);
+      xunlink (fname);
     }
-  sigprocmask (SIG_SETMASK, &oldset, NULL);
+  if (!signals_already_blocked)
+    sigprocmask (SIG_SETMASK, &oldset, NULL);
 }
 
 /* ========================================================================
  * Error handler.
  */
 void
-abort_gzip ()
+abort_gzip (void)
 {
-   remove_output_file ();
+   remove_output_file (false);
    do_exit(ERROR);
 }
 
 /* ========================================================================
  * Signal handler.
  */
-static RETSIGTYPE
-abort_gzip_signal (sig)
-     int sig;
+static void
+abort_gzip_signal (int sig)
 {
-  if (! SA_NOCLDSTOP)
-    signal (sig, SIG_IGN);
-   remove_output_file ();
+   remove_output_file (true);
    if (sig == exiting_signal)
      _exit (WARNING);
    signal (sig, SIG_DFL);
