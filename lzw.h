@@ -1,6 +1,6 @@
 /* lzw.h -- define the lzw functions.
 
-   Copyright (C) 1994-2018 Free Software Foundation, Inc.
+   Copyright (C) 1994-2022 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly.
 
    This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,5 @@
 #define FIRST  (CLEAR+1) /* first free entry */
 
 extern int maxbits;      /* max bits per code for LZW */
-extern int block_mode;   /* block compress mode -C compatible with 2.0 */
 
-extern int lzw    (int in, int out);
 extern int unlzw  (int in, int out);

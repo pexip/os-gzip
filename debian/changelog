@@ -1,9 +1,17 @@
-gzip (1.10-4+deb11u1) bullseye-security; urgency=high
+gzip (1.12-1) sid; urgency=high
 
-  * zgrep: fix arbitrary-file-write vulnerability
-    addressing CVE-2022-1271 (closes: #1009168)
+  * new upstream release
+    - zgrep: fix arbitrary-file-write vulnerability
+      address CVE-2022-1271 (closes: #1009168)
+    - report correct length of 4 GiB and larger files (closes: #149775)
+    - zgrep: fix "binary file matches" mislabeling; remove
+      zgrep-syntax-error.diff patch
+    - gzip: port to SIGPIPE-less platforms; remove sigpipe.diff patch
+    - gzexe: fix count of lines to skip; remove corresponding patch
+  * set standards version to 4.6.0
+  * update copyright notice
 
- -- Milan Kupcevic <milan@debian.org>  Sun, 10 Apr 2022 01:50:32 -0400
+ -- Milan Kupcevic <milan@debian.org>  Sat, 09 Apr 2022 22:22:26 -0400
 
 gzip (1.10-4) sid; urgency=medium
 

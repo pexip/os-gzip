@@ -1,6 +1,6 @@
 # Make gzip (GNU zip).
 
-# Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2018 Free Software Foundation,
+# Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2022 Free Software Foundation,
 # Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -31,8 +31,16 @@ noinst_LIBRARIES = libver.a
 nodist_libver_a_SOURCES = version.c version.h
 DISTCLEANFILES = version.c version.h
 
+if LESS
+ZLESS_MAN = zless.1
+ZLESS_PROG = zless
+else
+ZLESS_MAN =
+ZLESS_PROG =
+endif
+
 man_MANS = gunzip.1 gzexe.1 gzip.1 \
-  zcat.1 zcmp.1 zdiff.1 zforce.1 zgrep.1 zless.1 zmore.1 znew.1
+  zcat.1 zcmp.1 zdiff.1 zforce.1 zgrep.1 $(ZLESS_MAN) zmore.1 znew.1
 
 EXTRA_DIST = $(ACINCLUDE_INPUTS) $(man_MANS) \
   ChangeLog-2007 \
@@ -49,12 +57,15 @@ noinst_HEADERS = gzip.h lzw.h
 
 bin_PROGRAMS = gzip
 bin_SCRIPTS = gunzip gzexe zcat zcmp zdiff \
-  zegrep zfgrep zforce zgrep zless zmore znew
+  zegrep zfgrep zforce zgrep $(ZLESS_PROG) zmore znew
 gzip_SOURCES = \
-  bits.c deflate.c gzip.c inflate.c lzw.c \
+  bits.c deflate.c gzip.c inflate.c \
   trees.c unlzh.c unlzw.c unpack.c unzip.c util.c zip.c
 gzip_LDADD = libver.a lib/libgzip.a
 gzip_LDADD += $(LIB_CLOCK_GETTIME)
+if IBM_Z_DFLTCC
+gzip_SOURCES += dfltcc.c
+endif
 
 BUILT_SOURCES += version.c
 version.c: Makefile
@@ -81,9 +92,12 @@ gzip.doc.gz: gzip.doc $(bin_PROGRAMS)
 SUFFIXES = .in
 .in:
 	$(AM_V_GEN)rm -f $@-t $@ \
-          && sed \
+	  && sed \
 		-e 's|/bin/sh|$(SHELL)|g' \
 		-e 's|[@]GREP@|$(GREP)|g' \
+		-e "s|'gzip'|$(GZIP_TRANSFORMED)|g" \
+		-e "s|'zdiff'|$(ZDIFF_TRANSFORMED)|g" \
+		-e "s|'zgrep'|$(ZGREP_TRANSFORMED)|g" \
 		-e 's|[@]VERSION@|$(VERSION)|g' \
 		$(srcdir)/$@.in >$@-t \
 	  && chmod a=rx $@-t \
@@ -162,3 +176,35 @@ MAINTAINERCLEANFILES = gzip.doc
 
 MOSTLYCLEANFILES = _match.i match_.s _match.S gzip.doc.gz \
   gunzip gzexe zcat zcmp zdiff zegrep zfgrep zforce zgrep zless zmore znew
+
+# gzip, zdiff and zgrep are used by installed scripts, and installed names
+# might be transformed by 'configure' options like --program-transform-name.
+# Create executabls in the current directory by the transformed names,
+# for the benefit of 'make check'.
+if GZIP_IS_TRANSFORMED
+BUILT_SOURCES += $(GZIP_TRANSFORMED)
+MOSTLYCLEANFILES += $(GZIP_TRANSFORMED)
+$(GZIP_TRANSFORMED):
+	printf '%s\n' >'$@' \
+	  '#!$(SHELL)' \
+	  'exec '\''$(abs_top_builddir)/gzip'\'' "$$@"'
+	chmod a+x $@
+endif
+if ZDIFF_IS_TRANSFORMED
+BUILT_SOURCES += $(ZDIFF_TRANSFORMED)
+MOSTLYCLEANFILES += $(ZDIFF_TRANSFORMED)
+$(ZDIFF_TRANSFORMED):
+	printf '%s\n' >'$@' \
+	  '#!$(SHELL)' \
+	  'exec '\''$(abs_top_builddir)/zdiff'\'' "$$@"'
+	chmod a+x $@
+endif
+if ZGREP_IS_TRANSFORMED
+BUILT_SOURCES += $(ZGREP_TRANSFORMED)
+MOSTLYCLEANFILES += $(ZGREP_TRANSFORMED)
+$(ZGREP_TRANSFORMED):
+	printf '%s\n' >'$@' \
+	  '#!$(SHELL)' \
+	  'exec '\''$(abs_top_builddir)/zgrep'\'' "$$@"'
+	chmod a+x $@
+endif

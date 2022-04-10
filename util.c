@@ -1,6 +1,6 @@
 /* util.c -- utility functions for gzip support
 
-   Copyright (C) 1997-1999, 2001-2002, 2006, 2009-2018 Free Software
+   Copyright (C) 1997-1999, 2001-2002, 2006, 2009-2022 Free Software
    Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -96,6 +96,9 @@ static const ulg crc_32_tab[] = {
   0x2d02ef8dL
 };
 
+/* Shift register contents.  */
+static ulg crc = 0xffffffffL;
+
 /* ===========================================================================
  * Copy input to output unchanged: zcat == cat with --force.
  * IN assertion: insize bytes have already been read in inbuf and inptr bytes
@@ -109,7 +112,6 @@ int copy(in, out)
     errno = 0;
     while (insize > inptr) {
         write_buf(out, (char*)inbuf + inptr, insize - inptr);
-        bytes_out += insize - inptr;
         got = read_buffer (in, (char *) inbuf, INBUFSIZ);
         if (got == -1)
             read_error();
@@ -126,12 +128,10 @@ int copy(in, out)
  * Return the current crc in either case.
  */
 ulg updcrc(s, n)
-    uch *s;                 /* pointer to bytes to pump through */
+    const uch *s;           /* pointer to bytes to pump through */
     unsigned n;             /* number of bytes in s[] */
 {
     register ulg c;         /* temporary variable */
-
-    static ulg crc = (ulg)0xffffffffL; /* shift register contents */
 
     if (s == NULL) {
         c = 0xffffffffL;
@@ -144,6 +144,22 @@ ulg updcrc(s, n)
     crc = c;
     return c ^ 0xffffffffL;       /* (instead of ~c for 64-bit machines) */
 }
+
+/* Return a current CRC value.  */
+ulg
+getcrc (void)
+{
+  return crc ^ 0xffffffffL;
+}
+
+#ifdef IBM_Z_DFLTCC
+/* Set a new CRC value.  */
+void
+setcrc (ulg c)
+{
+  crc = c ^ 0xffffffffL;
+}
+#endif
 
 /* ===========================================================================
  * Clear input and output buffers
@@ -238,8 +254,7 @@ void flush_outbuf()
 {
     if (outcnt == 0) return;
 
-    write_buf(ofd, (char *)outbuf, outcnt);
-    bytes_out += (off_t)outcnt;
+    write_buf (ofd, outbuf, outcnt);
     outcnt = 0;
 }
 
@@ -252,16 +267,13 @@ void flush_window()
     if (outcnt == 0) return;
     updcrc(window, outcnt);
 
-    if (!test) {
-        write_buf(ofd, (char *)window, outcnt);
-    }
-    bytes_out += (off_t)outcnt;
+    write_buf (ofd, window, outcnt);
     outcnt = 0;
 }
 
 /* ===========================================================================
- * Does the same as write(), but also handles partial pipe writes and checks
- * for error return.
+ * Update the count of output bytes.  If testing, do not do any
+ * output.  Otherwise, write the buffer, checking for errors.
  */
 void write_buf(fd, buf, cnt)
     int       fd;
@@ -269,6 +281,10 @@ void write_buf(fd, buf, cnt)
     unsigned  cnt;
 {
     unsigned  n;
+
+    bytes_out += cnt;
+    if (test)
+      return;
 
     while ((n = write_buffer (fd, buf, cnt)) != cnt) {
         if (n == (unsigned)(-1)) {
@@ -330,6 +346,7 @@ int xunlink (filename)
   return r;
 }
 
+#ifdef NO_MULTIPLE_DOTS
 /* ========================================================================
  * Make a file name legal for file systems not allowing file names with
  * multiple dots or starting with a dot (such as MSDOS), by changing
@@ -348,6 +365,7 @@ void make_simple_name(name)
         if (*--p == '.') *p = '_';
     } while (p != name);
 }
+#endif
 
 /* Convert the value of the environment variable ENVVAR_NAME
    to a newly allocated argument vector, and set *ARGCP and *ARGVP

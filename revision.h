@@ -1,6 +1,6 @@
 /* revision.h -- define the version number
 
-   Copyright (C) 1998-1999, 2001-2002, 2006, 2009-2018 Free Software
+   Copyright (C) 1998-1999, 2001-2002, 2006, 2009-2022 Free Software
    Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly.
 
@@ -20,8 +20,3 @@
 
 #define PATCHLEVEL 0
 #define REVDATE "2002-09-30"
-
-/* This version does not support compression into old compress format: */
-#ifdef LZW
-#  undef LZW
-#endif

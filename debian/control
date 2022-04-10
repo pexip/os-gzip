@@ -5,7 +5,7 @@ Maintainer: Milan Kupcevic <milan@debian.org>
 Build-Depends: debhelper (>= 11), texinfo, autoconf, automake, less
 Build-Depends-Indep: mingw-w64
 Rules-Requires-Root: no
-Standards-Version: 4.5.0
+Standards-Version: 4.6.0
 Vcs-Git: https://salsa.debian.org/debian/gzip.git
 Vcs-Browser: https://salsa.debian.org/debian/gzip
 Homepage: https://www.gnu.org/software/gzip/

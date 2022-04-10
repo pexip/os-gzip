@@ -1,4 +1,548 @@
+2022-04-07  Jim Meyering  <meyering@fb.com>
+
+	version 1.12
+	* NEWS: Record release date.
+
+2022-04-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	zgrep: fix "binary file matches" mislabeling
+	Problem reported by Jim Avera (Bug#31280).
+	This became more of an issue when GNU grep 3.5 (2020) started sending
+	"binary file matches" diagnostics to stderr instead of to stdout.
+	* tests/Makefile.am (TESTS): Add zgrep-binary.
+	* tests/zgrep-binary: New test.
+	* zgrep.in (args): New var, to accumulate args separately
+	from grep command, so we can prepend args if need be.
+	Most uses of 'grep' changed to use 'args' instead, or also.
+	(with_filename): Set to 1 if more than one file and -h not given;
+	this simplifies later code.
+	(gnuish_grep): New var; evaluates to true if grep supports
+	-H and --label options, as is true for GNU and FreeBSD grep.
+	Append -H to 'grep' if outputting file names with GNUish grep,
+	and use --label with GNUish grep unless reading from stdin,
+	as that’s safer and more efficient than relabeling with 'sed'.
+
+	maint: use C locale more often
+	* gzexe.in, zdiff.in, zgrep.in:
+	Run expr and sed in the C locale when it might help to avoid
+	undefined behavior on non-GNU platforms.
+	* sample/zfile, znew.in: Run in the C locale, for simplicity and
+	to avoid undefined behavior on non-GNU platforms.
+
+	gzexe: optimize out a grep
+	* gzexe.in: Avoid an unnecessary invocation of ‘grep’,
+	by using sed instead.  Also, look only for at-most-3-digit numbers,
+	for consistency with the rest of the script.
+
+	gzip: mention when fixed bugs were introduced
+
+	zgrep: port to POSIX sed
+	* zgrep.in (res): When escaping the file name do not rely on GNU
+	sed’s extension to POSIX with respect to s/.../\n/.  Instead, use
+	features that should also work with AIX and/or Solaris sed.  This is
+	simpler anyway, and would have prevented the recently-fixed bug.
+
+2022-04-07  Jim Meyering  <meyering@fb.com>
+
+	zgrep: add NEWS and tests for this exploitable bug
+	* tests/zgrep-abuse: New file, based on PoC by cleemy desu wayo.
+	* tests/Makefile.am (TESTS): Add it.
+	* NEWS: Mention the exploit.
+	The bug appears to have been present since the beginning.
+
+2022-04-06  Lasse Collin  <lasse.collin@tukaani.org>
+
+	zgrep: avoid exploit via multi-newline file names
+	* zgrep.in: The issue with the old code is that with multiple
+	newlines, the N-command will read the second line of input,
+	then the s-commands will be skipped because it's not the end
+	of the file yet, then a new sed cycle starts and the pattern
+	space is printed and emptied. So only the last line or two get
+	escaped. This patch makes sed read all lines into the pattern
+	space and then do the escaping.
+
+	This vulnerability was discovered by:
+	cleemy desu wayo working with Trend Micro Zero Day Initiative
+
+2022-04-06  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: fix i386 port
+	* deflate.c (prev_length, match_start, max_chain_length, good_match):
+	Make these extern instead of static, reverting part of the
+	2021-12-01T21:46:36Z!eggert@cs.ucla.edu patch.  These symbols are
+	used by i386 asm, and so must be extern at least for i386.
+
+	maint: pacify GCC with recent x86 glibc
+	* configure.ac (WERROR_CFLAGS): Disable -Wtype-limits,
+	due to a false alarm on platforms where 'long' is 32 bits
+	and time_t is 64-bit, such as recent glibc on x86.
+
+2022-04-04  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: update from Gnulib
+	* bootstrap, tests/init.sh: Copy manually from current Gnulib.
+	* lib/.gitignore, m4/.gitignore: Update as per current Gnulib.
+
+	build: update gnulib submodule to latest
+
+	build: support --program-prefix etc.
+	Problem reported by Antonio Diaz Diaz via Dagobert Michelsen in:
+	https://bugs.gnu.org/16876
+	* Makefile.am (.in): Substitute for 'gzip', 'zdiff', 'zgrep'.
+	($(GZIP_TRANSFORMED), $(ZDIFF_TRANSFORMED), $(ZGREP_TRANSFORMED)):
+	New rules to build forwarding shell scripts, if needed.
+	Add these files to BUILT_SOURCES and MOSTLY_CLEANFILES if needed.
+	* configure.ac (GZIP_TRANSFORMED, ZDIFF_TRANSFORMED, ZGREP_TRANSFORMED):
+	New substituted vars.
+	(GZIP_IS_TRANSFORMED, ZDIFF_IS_TRANSFORMED, ZGREP_IS_TRANSFORMED):
+	New Automake conditions.
+	* gunzip.in, gzexe.in, zcat.in, zcmp.in, zdiff.in, zegrep.in:
+	* zfgrep.in, zforce.in, zgrep.in, zless.in, zmore.in, znew.in:
+	Quote possibly-transformed subcommand names.
+
+2022-04-01  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: improve doc for saved timestamps etc.
+	Problem reported by Carpe Sébastien (Bug#24559).
+
+2022-03-31  Paul Eggert  <eggert@cs.ucla.edu>
+
+	tests: port list-big test to macOS 12.1
+	* tests/list-big: Use dd, not truncate, to create a big file.
+
+	zmore: don't assume benign PAGER in testing
+	* tests/help-version (zmore_setup): Unset PAGER so that we test
+	'more', not whatever the tester has in its PAGER environment
+	variable.  This works around a problem I found when I ran
+	'PAGER=less make check' on a platform that lacked 'less'.
+
+	zless: install only on platforms with 'less'
+	Problem reported by Michael Felt (Bug#30029).
+	* Makefile.am (ZLESS_MAN, ZLESS_PROG): New macros.
+	(man_MANS, bin_SCRIPTS): Use them.
+	* configure.ac: Check for 'less'.
+	* tests/Makefile.am (ZLESS_PROG): New macro.
+	(built_programs): Use it.
+
+2022-03-29  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: spelling fixes
+
+	doc: omit @refill
+	* doc/gzip.texi: Remove @refill to suppress warning
+	‘gzip.texi:562: warning: @refill is obsolete.’ from makeinfo 6.8.
+
+2022-03-08  Paul Eggert  <eggert@cs.ucla.edu>
+
+	zdiff: fix another arg-handling bug
+	Also allow args after file names.
+	Problem reported by Lv Ying <https://bugs.gnu.org/54290#12>.
+
+2022-03-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	zdiff: fix arg handling bug
+	Problem reported by Lv Ying (Bug#54291).
+	* zdiff.in (escape): Handle args like '-C 5'.
+
+2022-02-10  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: embolden SEE ALSO refs
+	Problem reported by Helge Kreutzmann (Bug#53918).
+
+2022-01-03  Jim Meyering  <meyering@fb.com>
+
+	maint: avoid new syntax-check failures
+	* cfg.mk (local-checks-to-skip): Add sc_indent, to skip it.
+	Otherwise, "make syntax-check" would fail.
+
+	build: disable some expensive compiler warnings by default
+	* configure.ac (gl_GCC_VERSION_IFELSE): Copy from coreutils.
+	(gcc-warnings): Update from coreutils.
+
+	maint: make update-copyright
+
+	build: update gnulib to latest; also bootstrap and init.sh
+
+2021-12-15  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: document gzip -l change
+	* NEWS, doc/gzip.texi (Invoking gzip), gzip.1 (gunzip):
+	Document recent change.
+
+	gzip: gzip -l now outputs accurate size
+	gzip -l now decompresses to see how long the uncompressed file was.
+	This fixes what is by far the most common bug report for gzip.
+	It has a significant performance cost, but it’s worth it nowadays.
+	* gzip.c (main): -l now sets 'test' too.  All uses of
+	'test' changed.
+	(treat_stdin, treat_file): Call do_list after decompressing,
+	so that the length is known.
+	(do_list): Omit arg IFD, since it is no longer needed.
+	All callers changed.  Get the CRC and uncompressed size
+	from input_crc and bytes_out instead of using lseek.
+	* tests/list-big: New test.
+	* unzip.c (unzip): Set unzip_crc before returning.
+	* util.c (write_buf): If 'test', output nothing.
+	Update bytes_out with output byte count, regardless of 'test'.
+	All callers changed.
+
+2021-12-01  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: reduce module coupling
+	If a symbol is extern but never used by another module, make it
+	static instead, or remove it if it is not used anywhere.
+	* Makefile.am (gzip_SOURCES): Remove lzw.c.
+	* bits.c (bi_buf, bi_valid) [!IBM_Z_DFLTCC]:
+	* deflate.c (prev_length, match_start, max_chain_length)
+	(good_match, lm_init):
+	* gzip.c (verbose) [!DEBUG]:
+	* unlzw.c (block_mode):
+	Now static.
+	* gzip.c (help, main, do_lzw):
+	* revision.h:
+	Simplify by assuming !LZW.
+	* util.c (setcrc): Define only if IBM_Z_DFLTCC.
+	(make_simple_name): Define only if NO_MULTIPLE_DOTS.
+
+2021-10-30  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: modernize README-{hacking,prereq}
+
+2021-09-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	build: update gnulib submodule to latest
+
+2021-09-03  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 1.11
+	* NEWS: Record release date.
+
+2021-08-31  Paul Eggert  <eggert@cs.ucla.edu>
+
+	tests: port still better to NetBSD
+	* tests/hufts: Ignore more lines starting with ‘+’ in stderr.
+
+	tests: port better to NetBSD
+	* tests/hufts, tests/zdiff:
+	Ignore lines starting with ‘+’ in stderr.
+	The NetBSD shell outputs them after set -x.
+
+	tests: update help-version from coreutils
+	This merges coreutils/tests/misc/help-version.sh into
+	gzip/tests/help-version; they're now identical except
+	for the initial init.sh configuration line.  This
+	should port better to NetBSD.
+
+	maint: update .gitignore files
+	* .gitignore, lib/.gitignore, m4/.gitignore:
+	Bring up to date.  Remove duplicates.  Sort.
+
+	tests: port two-files to IRIX 6.5
+	Problem reported by Nelson H. F. Beebe.
+	* tests/two-files: Skip test if /dev/urandom is not readable.
+
+2021-08-29  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+	maint: don't send announcements to TP coordinator
+	gzip has no translatable strings, so don't include the translation
+	project coordinator's email address in the announcement template.
+	* cfg.mk (translation_project_): Define to be empty.
+
+2021-08-19  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: clarify "other links" diagnostic
+	* gzip.c (treat_file): Instead of saying
+	"gzip: FOO has 1 other link  -- unchanged", say
+	"gzip: FOO has 1 other link -- file ignored".
+	This is clearer when -k is also used (Bug#50097).
+
+2021-08-08  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+2021-06-30  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+2021-04-11  Dmitry V. Levin  <ldv@altlinux.org>
+
+	bug#47715: [PATCH] gzip.c: use a more portable alignment
+	The alignment of 8192 introduced by commit
+	be0c5581e38332b2ffa8a4cf92076cfde02872b4 is not quite portable:
+	eu-elflint --gnu-ld complains about the result gzip executable
+	with the following diagnostics:
+	section [25] '.bss' not fully contained in segment of program header entry 6
+
+	* gzip.c [__alignas_is_defined] (BUFFER_ALIGNED): Decrease alignment
+	from 8192 back to 4096.
+
+2021-03-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: modernize .gitignore
+	* lib/.gitignore, m4/.gitignore: Sort and modernize
+	to current Gnulib.
+
+	zgrep: fix option typo
+	* zgrep.in: Fix typo in option processing that prevented
+	operands like ‘binary-1’.
+
+	gzip: port to SIGPIPE-less platforms
+	* gzip.c (main): Don’t assume SIGPIPE is defined.
+
+2021-02-26  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* gzip.1: Quote better (Bug#46730).
+
+2021-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update all copyright year number ranges
+	Run "make update-copyright" and then...
+	* gnulib: Update to latest with copyright year adjusted.
+	* tests/init.sh: Sync with gnulib to pick up copyright year.
+	* bootstrap: Likewise.
+
+2020-12-09  Jim Meyering  <meyering@fb.com>
+
+	maint: avoid another autoreconf warning
+	* configure.ac: modernize AC_TRY_COMPILE invocation
+	Use AC_COMPILE_IFELSE instead of AC_TRY_COMPILE.
+
+	maint: remove uses of obsolete macros
+	* configure.ac (AC_TYPE_SIGNAL, AC_ISC_POSIX, AC_HEADER_STDC): Remove.
+
+	maint: avoid autoreconf warnings
+	* configure.ac: Go back to using AC_PROG_CC rather than AC_PROG_CC_STDC,
+	as the latter is obsolescent and the Autoconf bug involving the former
+	has been fixed.
+
+	build: update gnulib to latest
+
+	build: require autoconf-2.64
+	* configure.ac: Require autoconf-2.64, up from 2.63, to align with gnulib.
+
+2020-09-24  Ilya Leoshkevich  <iii@linux.ibm.com>
+
+	Add a test for compressing and decompressing two files
+	It ensures that compression and decompression state of the first file
+	does not affect the second file.
+
+	Fix DFLTCC segfault when compressing or decompressing two files
+	The value in total_in global variable from processing the first file
+	affected processing of the second file.  Fix by making total_in local.
+
+	bug#43583: Fix building DFLTCC with clang
+	clang does not support .machinemode, so put it under an #ifdef.
+
+	Update .gitignore files
+	On my s390x Fedora 31 machine there are a bunch of extra files copied to
+	lib and m4 directories.  Add them to .gitignore.
+
+2020-08-31  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: prefer bold to italics for command names
+
+2020-05-29  Ilya Leoshkevich  <iii@linux.ibm.com>
+
+	IBM Z DFLTCC: add STREQ definition
+	Commit 81c9fe4d0986 replaced !strcmp with STREQ in order to be compliant
+	with the gnulib linter, however, gnulib does not provide STREQ!
+
+	Quite a few gnulib .c files contain private definitions of STREQ. This
+	patch just goes with the flow and does the same in dfltcc.c.
+
+2020-03-21  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+2020-03-21  Bjarni Ingi Gislason  <bjarniig@rhi.hi.is>
+
+	doc: gzip.1: Change .BR to .B as there is only one argument
+	* gzip.1: Use .B rather than .BR to avoid diagnostics from an
+	upcoming version of groff:
+	  $ groff -b -e -mandoc -T utf8 -rF0 -t -w w -z
+	  <gzip.1>:327 (macro BR): only 1 argument, but more are expected
+	  <gzip.1>:459 (macro BR): only 1 argument, but more are expected
+	This addresses https://bugs.gnu.org/39845
+
+2020-03-14  Jim Meyering  <meyering@fb.com>
+
+	doc: man page improvements
+	* gzip.1 (REPORTING BUGS): New section.
+	(-t, --test): Add "then quit" at end of sentence to clarify what
+	this option does.
+	Reported by Dan Jacobson in https://bugs.gnu.org/839768.
+
+2020-01-10  Ilya Leoshkevich  <iii@linux.ibm.com>
+
+	IBM Z DFLTCC: fix three data corruption issues
+	SUSE maintainers have found an issue related to building zlib in 31-bit
+	mode, which also applies to gzip: STFLE instruction can be used only in
+	z/Architecture mode: https://build.opensuse.org/request/show/708284 --
+	I have integrated the fix into this patch.
+
+	* configure.ac (AC_CHECK_HEADERS_ONCE): Add feature detection for
+	sys/sdt.h probes.
+	* dfltcc.c (dfltcc_cc): Minor formatting improvements.
+	(HB_BITS): Remove.
+	(HB_SIZE): Likewise.
+	(is_dfltcc_enabled): Fix buffer overrun on newer models and incomplete
+	initialization on older models.
+	Add machine mode hint.
+	(dfltcc): Use sys/sdt.h feature detection.
+	(bi_load): New function.
+	(bi_close_block): Use bi_load.
+	(close_stream): Fix overwriting the End-of-block Symbol.
+	(dfltcc_deflate): Fix losing partial byte on flush.
+	Fix setting Block-Continuation Flag when DFLTCC-CMPR outputs 0 bits and
+	requests a retry.
+	Minor formatting improvements.
+	(dfltcc_inflate): Retry immediately if requested.
+	Print the hardware error code and flush the output buffer on error.
+	Minor formatting improvements.
+	* tests/hufts: Ignore the hardware error code.
+
+2020-01-05  Ilya Leoshkevich  <iii@linux.ibm.com>
+
+	Document IBM Z environment variables
+	IBM Z patch (7a6f9c9) introduced 6 environment variables, which are
+	used to tune the compression and decompression with the DEFLATE
+	COMPRESSION CALL instruction.  This patch adds texinfo documentation for
+	all of them.
+
+	* doc/gzip.texi (Environment): Add DFLTCC* environment variables.
+
+2020-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update all copyright year number ranges
+	Run "make update-copyright" and then...
+	* gnulib: Update to latest with copyright year adjusted.
+	* tests/init.sh: Sync with gnulib to pick up copyright year.
+	* bootstrap: Likewise.
+
+	maint: change calloc module to calloc-gnu
+	* bootstrap.conf (gnulib_modules): Use calloc-gnu module,
+	not the deprecated "calloc".
+
+2019-09-07  Jim Meyering  <meyering@fb.com>
+
+	maint: placate strcmp-vs-STREQ syntax check rule
+	* dfltcc.c (is_dfltcc_enabled): Use STREQ (env, "0")
+	in place of "!strcmp (env, "0").
+
+2019-04-02  Paul Eggert  <eggert@cs.ucla.edu>
+
+	Improve IBM Z patch
+	Most of this is minor changes to use GNU style and C99 constructs.
+	* NEWS: Mention IBM Z.
+	* bootstrap.conf (gnulib_modules): Add stdalign.
+	* dfltcc.c: Include stdalign.h, stdbool.h.
+	(union aligned_dfltcc_qaf_param, union aligned_dfltcc_param_v0):
+	New types, used for C11-style alignment.  All uses changed.
+	(init_param):
+	* gzip.c (BUFFER_ALIGNED): New macro.
+	(inbuf, outbuf, window): Use it, so buffers are aligned everywhere.
+	* gzip.h (INBUFSIZ, OUTBUFSIZE): Use big buffers everywhere,
+	unless SMALL_MEM.
+	* zip.c (SLOW, FAST): Now enums since they need not be macros:
+
+2019-04-02  Ilya Leoshkevich  <iii@linux.ibm.com>
+
+	bug#34918: [PATCH] Add support for IBM Z hardware-accelerated deflate
+	Future versions of IBM Z mainframes will provide DFLTCC instruction,
+	which implements deflate algorithm in hardware with estimated
+	compression and decompression performance orders of magnitude faster
+	than the current gzip and ratio comparable with that of level 1.
+
+	This patch adds DFLTCC support to gzip. In order to enable it, the
+	following build commands should be used:
+
+	    $ ./configure --enable-dfltcc
+	    $ make
+
+	When built like this, gzip would compress in hardware on level 1, and in
+	software on all other levels. Decompression will always happen in
+	hardware. In order to enable DFLTCC compression for levels 1-6 (i.e. to
+	make it used by default) one could either add -DDFLTCC_LEVEL_MASK=0x7e
+	at compile time, or set the environment variable DFLTCC_LEVEL_MASK to
+	0x7e at run time.
+
+	Two DFLTCC compression calls produce the same results only when they
+	both are made on machines of the same generation, and when the
+	respective buffers have the same offset relative to the start of the
+	page. Therefore care should be taken when using hardware compression
+	when reproducible results are desired. One such use case - reproducible
+	software builds - is handled explicitly: when SOURCE_DATE_EPOCH
+	environment variable is set, the hardware compression is disabled.
+
+	This patch tries to add DFLTCC support in a least intrusive way.
+	All SystemZ-specific code was placed into a separate file, but
+	unfortunately there is still a noticeable amount of changes in the
+	main gzip code. Below is the summary of those changes.
+
+	DFLTCC will refuse to write an End-of-block Symbol if there is no input
+	data, thus in some cases it is necessary to do this manually. In order
+	to achieve this, bi_buf and bi_valid were promoted to extern variables.
+
+	lm_init() function moves the input buffer into the window, which is not
+	desirable for DFLTCC. Therefore, its invocation was moved to
+	software-only deflate(). In addition to initializing the window, this
+	function also used to convert compression level to flags, which is still
+	needed for DFLTCC. This responsibility was handed off to zip() function.
+
+	To achieve maximum performance with DFLTCC, inbuf and outbuf must be
+	256k big and page-aligned. Additionally, for DFLTCC to work at all, the
+	window must be page-aligned.
+
+	In addition to compression, DFLTCC computes CRC-32 checksum, therefore,
+	whenever it's used, software checksumming needs to be suppressed and its
+	results replaced by those of dfltcc. This is achieved by introducing the
+	new getcrc() and setcrc() functions.
+
+	Unlike the current software implementation, DFLTCC decompresses data
+	into the output buffer, and not the window. Therefore, just like
+	flushing the window, flushing the output buffer must honor the test
+	flag.
+
+	Finally, znew-k test assumes that "znew -K" would not convert the test
+	.Z file to .gz, which is not the case with DFLTCC. Since this is not the
+	main point of the test, this assumption was relaxed.
+
+2019-03-26  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzexe: fix count of lines to skip
+	Problem reported by Jakub Martisko (Bug#35002).
+	* gzexe.in (skip): Bump from 44 to 49.
+
+2019-01-20  Jim Meyering  <meyering@fb.com>
+
+	build: ensure no VLA is used
+	Cause developer builds to fail for any use of a VLA.
+	VLAs (variable length arrays) limit portability.
+	* configure.ac (nw): Remove -Wvla from the list of disabled warnings,
+	thus enabling the warning when configured with --enable-gcc-warnings.
+	(GNULIB_NO_VLA) Define, disabling use of VLAs in gnulib.  This commit
+	is functionally equivalent to coreutils' v8.30-44-gd26dece5d.
+
+	build: update gnulib to latest
+
+2019-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update all copyright dates via "make update-copyright"
+	* gnulib: Also update submodule for its copyright updates.
+
 2018-12-29  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
 
 	version 1.10
 	* NEWS: Record release date.

@@ -1,5 +1,5 @@
 ## Process this file with automake to create Makefile.in
-# Copyright 2010-2018 Free Software Foundation, Inc.
+# Copyright 2010-2022 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +21,14 @@ TESTS =					\
   hufts					\
   keep					\
   list					\
+  list-big				\
   memcpy-abuse				\
   mixed					\
   null-suffix-clobber			\
   reproducible				\
   stdin					\
   timestamp				\
+  two-files				\
   trailing-nul				\
   unpack-invalid			\
   unpack-valid				\
@@ -34,6 +36,8 @@ TESTS =					\
   z-suffix				\
   zdiff					\
   zgrep-f				\
+  zgrep-abuse				\
+  zgrep-binary				\
   zgrep-context				\
   zgrep-signal				\
   znew-k
@@ -43,6 +47,12 @@ EXTRA_DIST =				\
   init.cfg				\
   init.sh				\
   hufts-segv.gz
+
+if LESS
+ZLESS_PROG = zless
+else
+ZLESS_PROG =
+endif
 
 built_programs = \
   gzip		\
@@ -55,7 +65,7 @@ built_programs = \
   zfgrep	\
   zforce	\
   zgrep		\
-  zless		\
+  $(ZLESS_PROG)	\
   zmore		\
   znew
 
