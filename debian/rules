@@ -75,6 +75,8 @@ reconf-stamp:
 configure: configure-stamp
 configure-stamp: reconf-stamp
 	dh_testdir
+	chmod 775 tests/zgrep-abuse
+	chmod 775 tests/zgrep-binary
 	mkdir -p builddir
 	cd builddir && env \
 	    $(foreach i,CC CFLAGS CPPFLAGS LDFLAGS,$(call shellexport,$i)) \
@@ -84,6 +86,8 @@ configure-stamp: reconf-stamp
 configure-indep: configure-indep-stamp
 configure-indep-stamp: reconf-stamp
 	dh_testdir
+	chmod 775 tests/zgrep-abuse
+	chmod 775 tests/zgrep-binary
 	mkdir -p builddir-indep
 	cd builddir-indep && ../configure --host=i686-w64-mingw32
 	:>$@

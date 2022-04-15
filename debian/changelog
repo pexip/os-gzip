@@ -1,3 +1,11 @@
+gzip (1.9-3+deb10u1) buster-security; urgency=high
+
+  * zgrep: fix arbitrary-file-write vulnerability
+    addressing CVE-2022-1271 (closes: #1009168)
+  * debian/rules: set execute mode bit on test scripts
+
+ -- Milan Kupcevic <milan@debian.org>  Fri, 15 Apr 2022 14:16:55 -0400
+
 gzip (1.9-3) unstable; urgency=medium
 
   * move canonical packaging repo to salsa.debian.org
