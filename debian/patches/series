@@ -6,3 +6,4 @@ zgrep-syntax-error.diff
 gnulib-4af4a4a71827c0bc5.patch
 disable-broken-Wabi.patch
 disable-Werror.patch
+CVE-2022-1271.patch
