@@ -120,7 +120,6 @@ AC_DEFUN([gl_EARLY],
   # Code from module gnumakefile:
   # Code from module gnupload:
   # Code from module havelib:
-  # Code from module host-cpu-c-abi:
   # Code from module ignore-value:
   # Code from module include_next:
   # Code from module intprops:
@@ -160,6 +159,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module printf-frexpl:
   # Code from module printf-posix:
   # Code from module printf-safe:
+  # Code from module raise:
   # Code from module readdir:
   # Code from module readme-release:
   # Code from module realloc-gnu:
@@ -167,7 +167,10 @@ AC_DEFUN([gl_EARLY],
   # Code from module rmdir:
   # Code from module save-cwd:
   # Code from module savedir:
+  # Code from module sigaction:
+  # Code from module signal-h:
   # Code from module signbit:
+  # Code from module sigprocmask:
   # Code from module size_max:
   # Code from module snippet/_Noreturn:
   # Code from module snippet/arg-nonnull:
@@ -453,7 +456,6 @@ AC_DEFUN([gl_INIT],
           m4_defn([m4_PACKAGE_VERSION])), [1], [],
         [AC_CONFIG_LINKS([$GNUmakefile:$GNUmakefile], [],
           [GNUmakefile=$GNUmakefile])])
-  AC_REQUIRE([gl_HOST_CPU_C_ABI])
   gl_FUNC_ISNAND_NO_LIBM
   if test $gl_func_isnand_no_libm != yes; then
     AC_LIBOBJ([isnand])
@@ -561,6 +563,12 @@ AC_DEFUN([gl_INIT],
   gl_FUNC_PRINTF_POSIX
   gl_STDIO_MODULE_INDICATOR([printf-posix])
   m4_divert_text([INIT_PREPARE], [gl_printf_safe=yes])
+  gl_FUNC_RAISE
+  if test $HAVE_RAISE = 0 || test $REPLACE_RAISE = 1; then
+    AC_LIBOBJ([raise])
+    gl_PREREQ_RAISE
+  fi
+  gl_SIGNAL_MODULE_INDICATOR([raise])
   gl_FUNC_READDIR
   if test $HAVE_READDIR = 0; then
     AC_LIBOBJ([readdir])
@@ -583,6 +591,13 @@ AC_DEFUN([gl_INIT],
   gl_UNISTD_MODULE_INDICATOR([rmdir])
   gl_SAVE_CWD
   gl_SAVEDIR
+  gl_SIGACTION
+  if test $HAVE_SIGACTION = 0; then
+    AC_LIBOBJ([sigaction])
+    gl_PREREQ_SIGACTION
+  fi
+  gl_SIGNAL_MODULE_INDICATOR([sigaction])
+  gl_SIGNAL_H
   gl_SIGNBIT
   if test $REPLACE_SIGNBIT = 1; then
     AC_LIBOBJ([signbitf])
@@ -590,6 +605,12 @@ AC_DEFUN([gl_INIT],
     AC_LIBOBJ([signbitl])
   fi
   gl_MATH_MODULE_INDICATOR([signbit])
+  gl_SIGNALBLOCKING
+  if test $HAVE_POSIX_SIGNALBLOCKING = 0; then
+    AC_LIBOBJ([sigprocmask])
+    gl_PREREQ_SIGPROCMASK
+  fi
+  gl_SIGNAL_MODULE_INDICATOR([sigprocmask])
   gl_SIZE_MAX
   gt_TYPE_SSIZE_T
   gl_FUNC_STAT
@@ -941,7 +962,6 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/malloc.c
   lib/malloca.c
   lib/malloca.h
-  lib/malloca.valgrind
   lib/math.c
   lib/math.in.h
   lib/memchr.c
@@ -974,6 +994,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/printf-parse.c
   lib/printf-parse.h
   lib/printf.c
+  lib/raise.c
   lib/readdir.c
   lib/realloc.c
   lib/rmdir.c
@@ -981,9 +1002,14 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/save-cwd.h
   lib/savedir.c
   lib/savedir.h
+  lib/sig-handler.c
+  lib/sig-handler.h
+  lib/sigaction.c
+  lib/signal.in.h
   lib/signbitd.c
   lib/signbitf.c
   lib/signbitl.c
+  lib/sigprocmask.c
   lib/size_max.h
   lib/stat-time.c
   lib/stat-time.h
@@ -1139,11 +1165,15 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/printf-posix-rpl.m4
   m4/printf.m4
   m4/pthread_rwlock_rdlock.m4
+  m4/raise.m4
   m4/readdir.m4
   m4/realloc.m4
   m4/rmdir.m4
   m4/save-cwd.m4
   m4/savedir.m4
+  m4/sigaction.m4
+  m4/signal_h.m4
+  m4/signalblocking.m4
   m4/signbit.m4
   m4/size_max.m4
   m4/ssize_t.m4

@@ -1,6 +1,6 @@
-This is gzip.info, produced by makeinfo version 6.3 from gzip.texi.
+This is gzip.info, produced by makeinfo version 6.5 from gzip.texi.
 
-This manual is for GNU Gzip (version 1.9, 7 January 2018), and documents
+This manual is for GNU Gzip (version 1.10, 7 August 2018), and documents
 commands for compressing and decompressing data.
 
    Copyright © 1998-1999, 2001-2002, 2006-2007, 2009-2018 Free Software
@@ -36,7 +36,7 @@ File: gzip.info,  Node: Top,  Next: Overview,  Up: (dir)
 GNU Gzip: General file (de)compression
 **************************************
 
-This manual is for GNU Gzip (version 1.9, 7 January 2018), and documents
+This manual is for GNU Gzip (version 1.10, 7 August 2018), and documents
 commands for compressing and decompressing data.
 
    Copyright © 1998-1999, 2001-2002, 2006-2007, 2009-2018 Free Software
@@ -86,16 +86,19 @@ example, if file names are limited to 14 characters, gzip.msdos.exe is
 compressed to gzi.msd.exe.gz.  Names are not truncated on systems which
 do not have a limit on file name length.
 
-   By default, ‘gzip’ keeps the original file name and timestamp in the
-compressed file.  These are used when decompressing the file with the
-‘-N’ option.  This is useful when the compressed file name was truncated
-or when the timestamp was not preserved after a file transfer.  However,
-due to limitations in the current ‘gzip’ file format, fractional seconds
-are discarded.  Also, timestamps must fall within the range 1970-01-01
-00:00:01 through 2106-02-07 06:28:15 UTC, and hosts whose operating
-systems use 32-bit timestamps are further restricted to timestamps no
-later than 2038-01-19 03:14:07 UTC.  The upper bounds assume the typical
-case where leap seconds are ignored.
+   By default, ‘gzip’ keeps the original file name in the compressed
+file.  This can be useful when decompressing the file with ‘-N’ if the
+compressed file name was truncated after a file transfer.
+
+   If the original is a regular file, ‘gzip’ by default keeps its
+timestamp in the compressed file.  This can be useful when decompressing
+the file with ‘-N’ if the timestamp was not preserved after a file
+transfer.  However, due to limitations in the current ‘gzip’ file
+format, fractional seconds are discarded.  Also, timestamps must fall
+within the range 1970-01-01 00:00:01 through 2106-02-07 06:28:15 UTC,
+and hosts whose operating systems use 32-bit timestamps are further
+restricted to timestamps no later than 2038-01-19 03:14:07 UTC.  The
+upper bounds assume the typical case where leap seconds are ignored.
 
    Compressed files can be restored to their original form using ‘gzip
 -d’ or ‘gunzip’ or ‘zcat’.  If the original name saved in the compressed
@@ -311,11 +314,12 @@ The format for running the ‘gzip’ program is:
 
 ‘--name’
 ‘-N’
-     When compressing, always save the original file name and timestamp;
-     this is the default.  When decompressing, restore the original file
-     name and timestamp if present.  This option is useful on systems
-     which have a limit on file name length or when the timestamp has
-     been lost after a file transfer.
+     When compressing, always save the original file name, and save the
+     original timestamp if the original is a regular file; this is the
+     default.  When decompressing, restore the original file name and
+     timestamp if present.  This option is useful on systems which have
+     a limit on file name length or when the timestamp has been lost
+     after a file transfer.
 
 ‘--quiet’
 ‘-q’
@@ -986,14 +990,14 @@ Appendix B Concept index
 Tag Table:
 Node: Top1472
 Node: Overview2701
-Node: Sample8164
-Node: Invoking gzip10308
-Node: Advanced usage16590
-Node: Environment18221
-Node: Tapes19082
-Node: Problems19640
-Node: GNU Free Documentation License20126
-Node: Concept index45480
+Node: Sample8309
+Node: Invoking gzip10453
+Node: Advanced usage16793
+Node: Environment18424
+Node: Tapes19285
+Node: Problems19843
+Node: GNU Free Documentation License20329
+Node: Concept index45683
 
 End Tag Table
 

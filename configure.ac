@@ -19,7 +19,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-AC_PREREQ([2.60])
+AC_PREREQ([2.63])
 AC_INIT([gzip],
         m4_esyscmd([build-aux/git-version-gen .tarball-version]),
         [bug-gzip@gnu.org])
@@ -110,7 +110,6 @@ if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wsystem-headers"         # Don't let system headers trigger warnings
   nw="$nw -Wsign-conversion"        # Too many warnings for now
   nw="$nw -Wtraditional-conversion" # Too many warnings for now
-  nw="$nw -Wunreachable-code"       # Too many warnings for now
   nw="$nw -Wpadded"                 # Our structs are not padded
   nw="$nw -Wredundant-decls"        # openat.h declares e.g., mkdirat
   nw="$nw -Wlogical-op"             # any use of fwrite provokes this
@@ -177,6 +176,7 @@ if test "$gl_gcc_warnings" = yes; then
   # Remove the following and save the result in GNULIB_WARN_CFLAGS.
   nw=
   nw="$nw -Wstrict-overflow"
+  nw="$nw -Wformat-truncation=2"
   nw="$nw -Wuninitialized"
   nw="$nw -Wunused-macros"
   nw="$nw -Wmissing-prototypes"

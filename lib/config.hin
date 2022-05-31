@@ -1,80 +1,5 @@
 /* lib/config.hin.  Generated from configure.ac by autoheader.  */
 
-/* CPU and C ABI indicator */
-#ifndef __i386__
-#undef __i386__
-#endif
-#ifndef __x86_64_x32__
-#undef __x86_64_x32__
-#endif
-#ifndef __x86_64__
-#undef __x86_64__
-#endif
-#ifndef __alpha__
-#undef __alpha__
-#endif
-#ifndef __arm__
-#undef __arm__
-#endif
-#ifndef __armhf__
-#undef __armhf__
-#endif
-#ifndef __arm64_ilp32__
-#undef __arm64_ilp32__
-#endif
-#ifndef __arm64__
-#undef __arm64__
-#endif
-#ifndef __hppa__
-#undef __hppa__
-#endif
-#ifndef __hppa64__
-#undef __hppa64__
-#endif
-#ifndef __ia64_ilp32__
-#undef __ia64_ilp32__
-#endif
-#ifndef __ia64__
-#undef __ia64__
-#endif
-#ifndef __m68k__
-#undef __m68k__
-#endif
-#ifndef __mips__
-#undef __mips__
-#endif
-#ifndef __mipsn32__
-#undef __mipsn32__
-#endif
-#ifndef __mips64__
-#undef __mips64__
-#endif
-#ifndef __powerpc__
-#undef __powerpc__
-#endif
-#ifndef __powerpc64__
-#undef __powerpc64__
-#endif
-#ifndef __powerpc64_elfv2__
-#undef __powerpc64_elfv2__
-#endif
-#ifndef __s390__
-#undef __s390__
-#endif
-#ifndef __s390x__
-#undef __s390x__
-#endif
-#ifndef __sh__
-#undef __sh__
-#endif
-#ifndef __sparc__
-#undef __sparc__
-#endif
-#ifndef __sparc64__
-#undef __sparc64__
-#endif
-
-
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
@@ -366,6 +291,9 @@
 /* Define to 1 when the gnulib module printf-posix should be tested. */
 #undef GNULIB_TEST_PRINTF_POSIX
 
+/* Define to 1 when the gnulib module raise should be tested. */
+#undef GNULIB_TEST_RAISE
+
 /* Define to 1 when the gnulib module readdir should be tested. */
 #undef GNULIB_TEST_READDIR
 
@@ -375,8 +303,14 @@
 /* Define to 1 when the gnulib module rmdir should be tested. */
 #undef GNULIB_TEST_RMDIR
 
+/* Define to 1 when the gnulib module sigaction should be tested. */
+#undef GNULIB_TEST_SIGACTION
+
 /* Define to 1 when the gnulib module signbit should be tested. */
 #undef GNULIB_TEST_SIGNBIT
+
+/* Define to 1 when the gnulib module sigprocmask should be tested. */
+#undef GNULIB_TEST_SIGPROCMASK
 
 /* Define to 1 when the gnulib module stat should be tested. */
 #undef GNULIB_TEST_STAT
@@ -519,6 +453,10 @@
 /* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
    don't. */
 #undef HAVE_DECL_STRERROR_R
+
+/* Define to 1 if you have the declaration of `_fseeki64', and to 0 if you
+   don't. */
+#undef HAVE_DECL__FSEEKI64
 
 /* Define to 1 if you have the declaration of `_snprintf', and to 0 if you
    don't. */
@@ -677,9 +615,6 @@
    concept. */
 #undef HAVE_MSVC_INVALID_PARAMETER_HANDLER
 
-/* Define to 1 if you have the `nanotime' function. */
-#undef HAVE_NANOTIME
-
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
@@ -705,6 +640,9 @@
    reader. */
 #undef HAVE_PTHREAD_RWLOCK_RDLOCK_PREFER_WRITER
 
+/* Define to 1 if you have the `raise' function. */
+#undef HAVE_RAISE
+
 /* Define to 1 if you have the `readdir' function. */
 #undef HAVE_READDIR
 
@@ -721,6 +659,15 @@
 /* Define to 1 if you have the `setdtablesize' function. */
 #undef HAVE_SETDTABLESIZE
 
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
+/* Define to 1 if you have the `sigaltstack' function. */
+#undef HAVE_SIGALTSTACK
+
+/* Define to 1 if the system has the type `siginfo_t'. */
+#undef HAVE_SIGINFO_T
+
 /* Define to 1 if you have the `siginterrupt' function. */
 #undef HAVE_SIGINTERRUPT
 
@@ -732,6 +679,9 @@
 
 /* Define to 1 if 'wint_t' is a signed integer type. */
 #undef HAVE_SIGNED_WINT_T
+
+/* Define to 1 if the system has the type `sigset_t'. */
+#undef HAVE_SIGSET_T
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
@@ -769,6 +719,9 @@
 
 /* Define to 1 if you have the `strnlen' function. */
 #undef HAVE_STRNLEN
+
+/* Define to 1 if `sa_sigaction' is a member of `struct sigaction'. */
+#undef HAVE_STRUCT_SIGACTION_SA_SIGACTION
 
 /* Define to 1 if `st_atimensec' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_ATIMENSEC
@@ -1191,6 +1144,11 @@
 #ifndef _XOPEN_SOURCE
 # undef _XOPEN_SOURCE
 #endif
+/* Enable X/Open compliant socket functions that do not require linking
+   with -lxnet on HP-UX 11.11.  */
+#ifndef _HPUX_ALT_XOPEN_SOCKET_API
+# undef _HPUX_ALT_XOPEN_SOCKET_API
+#endif
 /* Enable general extensions on Solaris.  */
 #ifndef __EXTENSIONS__
 # undef __EXTENSIONS__
@@ -1242,12 +1200,15 @@
 #undef _NETBSD_SOURCE
 
 /* The _Noreturn keyword of C11.  */
-#if ! (defined _Noreturn \
-       || (defined __STDC_VERSION__ && 201112 <= __STDC_VERSION__))
-# if (3 <= __GNUC__ || (__GNUC__ == 2 && 8 <= __GNUC_MINOR__) \
-      || 0x5110 <= __SUNPRO_C)
+#ifndef _Noreturn
+# if 201103 <= (defined __cplusplus ? __cplusplus : 0)
+#  define _Noreturn [[noreturn]]
+# elif (201112 <= (defined __STDC_VERSION__ ? __STDC_VERSION__ : 0) \
+        || 4 < __GNUC__ + (7 <= __GNUC_MINOR__))
+   /* _Noreturn works as-is.  */
+# elif 2 < __GNUC__ + (8 <= __GNUC_MINOR__) || 0x5110 <= __SUNPRO_C
 #  define _Noreturn __attribute__ ((__noreturn__))
-# elif defined _MSC_VER && 1200 <= _MSC_VER
+# elif 1200 <= (defined _MSC_VER ? _MSC_VER : 0)
 #  define _Noreturn __declspec (noreturn)
 # else
 #  define _Noreturn
@@ -1298,7 +1259,8 @@
    if isdigit is mistakenly implemented via a static inline function,
    a program containing an extern inline function that calls isdigit
    may not work since the C standard prohibits extern inline functions
-   from calling static functions.  This bug is known to occur on:
+   from calling static functions (ISO C 99 section 6.7.4.(3).
+   This bug is known to occur on:
 
      OS X 10.8 and earlier; see:
      https://lists.gnu.org/r/bug-gnulib/2012-12/msg00023.html
@@ -1311,7 +1273,18 @@
 
    OS X 10.9 has a macro __header_inline indicating the bug is fixed for C and
    for clang but remains for g++; see <https://trac.macports.org/ticket/41033>.
-   Assume DragonFly and FreeBSD will be similar.  */
+   Assume DragonFly and FreeBSD will be similar.
+
+   GCC 4.3 and above with -std=c99 or -std=gnu99 implements ISO C99
+   inline semantics, unless -fgnu89-inline is used.  It defines a macro
+   __GNUC_STDC_INLINE__ to indicate this situation or a macro
+   __GNUC_GNU_INLINE__ to indicate the opposite situation.
+   GCC 4.2 with -std=c99 or -std=gnu99 implements the GNU C inline
+   semantics but warns, unless -fgnu89-inline is used:
+     warning: C99 inline functions are not supported; using GNU89
+     warning: to disable this warning use -fgnu89-inline or the gnu_inline function attribute
+   It defines a macro __GNUC_GNU_INLINE__ to indicate this situation.
+ */
 #if (((defined __APPLE__ && defined __MACH__) \
       || defined __DragonFly__ || defined __FreeBSD__) \
      && (defined __header_inline \
@@ -1373,6 +1346,9 @@
 # define _GL_INLINE_HEADER_END
 #endif
 
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef gid_t
+
 /* Define to long or long long if <stdint.h> and <inttypes.h> don't define. */
 #undef intmax_t
 
@@ -1425,6 +1401,9 @@
 /* Define as a signed type of the same size as size_t. */
 #undef ssize_t
 
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef uid_t
+
 /* Define as a marker that can be attached to declarations that might not
     be used.  This helps to reduce warnings, such as from
     GCC -Wunused-parameter.  */
@@ -1459,5 +1438,12 @@
 # define _GL_ATTRIBUTE_CONST __attribute__ ((__const__))
 #else
 # define _GL_ATTRIBUTE_CONST /* empty */
+#endif
+
+/* The __malloc__ attribute was added in gcc 3.  */
+#if 3 <= __GNUC__
+# define _GL_ATTRIBUTE_MALLOC __attribute__ ((__malloc__))
+#else
+# define _GL_ATTRIBUTE_MALLOC /* empty */
 #endif
 
