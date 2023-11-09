@@ -10,7 +10,7 @@ Standards-Version: 4.5.0
 Vcs-Git: https://salsa.debian.org/debian/gzip.git
 Vcs-Browser: https://salsa.debian.org/debian/gzip
 Homepage: https://www.gnu.org/software/gzip/
-XS-Pexip-Upstream: http://deb.debian.org/debian/ bullseye
+XS-Pexip-Upstream: http://deb.debian.org/debian/ bookworm
 
 Package: gzip
 Architecture: any
