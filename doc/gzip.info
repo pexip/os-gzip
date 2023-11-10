@@ -1,9 +1,9 @@
-This is gzip.info, produced by makeinfo version 6.5 from gzip.texi.
+This is gzip.info, produced by makeinfo version 6.8 from gzip.texi.
 
-This manual is for GNU Gzip (version 1.10, 7 August 2018), and documents
+This manual is for GNU Gzip (version 1.12, 2 April 2022), and documents
 commands for compressing and decompressing data.
 
-   Copyright © 1998-1999, 2001-2002, 2006-2007, 2009-2018 Free Software
+   Copyright © 1998–1999, 2001–2002, 2006–2007, 2009–2022 Free Software
 Foundation, Inc.
 
    Copyright © 1992, 1993 Jean-loup Gailly
@@ -36,10 +36,10 @@ File: gzip.info,  Node: Top,  Next: Overview,  Up: (dir)
 GNU Gzip: General file (de)compression
 **************************************
 
-This manual is for GNU Gzip (version 1.10, 7 August 2018), and documents
+This manual is for GNU Gzip (version 1.12, 2 April 2022), and documents
 commands for compressing and decompressing data.
 
-   Copyright © 1998-1999, 2001-2002, 2006-2007, 2009-2018 Free Software
+   Copyright © 1998–1999, 2001–2002, 2006–2007, 2009–2022 Free Software
 Foundation, Inc.
 
    Copyright © 1992, 1993 Jean-loup Gailly
@@ -57,7 +57,7 @@ Foundation, Inc.
 * Sample::		Sample output from ‘gzip’.
 * Invoking gzip::	How to run ‘gzip’.
 * Advanced usage::	Concatenated files.
-* Environment::		The ‘GZIP’ environment variable
+* Environment::		Environment variables.
 * Tapes::               Using ‘gzip’ on tapes.
 * Problems::		Reporting bugs.
 * GNU Free Documentation License:: Copying and sharing this manual.
@@ -148,11 +148,13 @@ used in ‘pack’), or adaptive Huffman coding (‘compact’).
 
    Compression is always performed, even if the compressed file is
 slightly larger than the original.  The worst case expansion is a few
-bytes for the ‘gzip’ file header, plus 5 bytes every 32K block, or an
-expansion ratio of 0.015% for large files.  Note that the actual number
-of used disk blocks almost never increases.  ‘gzip’ normally preserves
-the mode, ownership and timestamps of files when compressing or
-decompressing.
+bytes for the ‘gzip’ file header, plus 5 bytes per 32 KiB block, or an
+expansion ratio of 0.015% for large files.  The actual number of used
+disk blocks almost never increases.
+
+   ‘gzip’ normally preserves the mode and modification timestamp of a
+file when compressing or decompressing.  If you have appropriate
+privileges, it also preserves the file’s owner and group.
 
    The ‘gzip’ file format is specified in P. Deutsch, GZIP file format
 specification version 4.3, Internet RFC 1952
@@ -271,12 +273,6 @@ The format for running the ‘gzip’ program is:
           ratio: compression ratio (0.0% if unknown)
           uncompressed_name: name of the uncompressed file
 
-     The uncompressed size is given as −1 for files not in ‘gzip’
-     format, such as compressed ‘.Z’ files.  To get the uncompressed
-     size for such a file, you can use:
-
-          zcat file.Z | wc -c
-
      In combination with the ‘--verbose’ option, the following fields
      are also displayed:
 
@@ -289,14 +285,6 @@ The format for running the ‘gzip’ program is:
      With ‘--verbose’, the size totals and compression ratio for all
      files is also displayed, unless some sizes are unknown.  With
      ‘--quiet’, the title and totals lines are not displayed.
-
-     The ‘gzip’ format represents the input size modulo 2^32, so the
-     uncompressed size and compression ratio are listed incorrectly for
-     uncompressed files 4 GiB and larger.  To work around this problem,
-     you can use the following command to discover a large uncompressed
-     file’s true size:
-
-          zcat file.gz | wc -c
 
 ‘--license’
 ‘-L’
@@ -315,11 +303,14 @@ The format for running the ‘gzip’ program is:
 ‘--name’
 ‘-N’
      When compressing, always save the original file name, and save the
-     original timestamp if the original is a regular file; this is the
-     default.  When decompressing, restore the original file name and
-     timestamp if present.  This option is useful on systems which have
-     a limit on file name length or when the timestamp has been lost
-     after a file transfer.
+     seconds part of the original modification timestamp if the original
+     is a regular file and its timestamp is at least 1 (1970-01-01
+     00:00:01 UTC) and is less than 2^{32} (2106-02-07 06:28:16 UTC,
+     assuming leap seconds are not counted); this is the default.  When
+     decompressing, restore from the saved file name and timestamp if
+     present.  This option is useful on systems which have a limit on
+     file name length or when the timestamp has been lost after a file
+     transfer.
 
 ‘--quiet’
 ‘-q’
@@ -459,6 +450,48 @@ create an executable script ‘$HOME/bin/gzip’ containing the following:
      #! /bin/sh
      export PATH=/usr/bin
      exec gzip -9 "$@"
+
+   The following environment variables are applicable only when using
+‘gzip’ on IBM Z mainframes supporting DEFLATE COMPRESSION CALL
+instruction:
+
+‘DFLTCC’
+     Whether DEFLATE COMPRESSION CALL should be used.  Default value is
+     ‘1’.  Set this to ‘0’ to disable DEFLATE COMPRESSION CALL
+     altogether.
+
+‘DFLTCC_LEVEL_MASK’
+     Compression levels on which DEFLATE COMPRESSION CALL should be
+     used.  Represented as a bit mask in decimal or hexadecimal form,
+     where each bit corresponds to a compression level.  Default value
+     is ‘2’, which means level 1 only.  In order to make use of DEFLATE
+     COMPRESSION CALL by default, that is, on levels 1-6, set this to
+     ‘0x7e’.
+
+‘DFLTCC_BLOCK_SIZE’
+     Size of deflate blocks produced by DEFLATE COMPRESSION CALL in
+     bytes in decimal or hexadecimal form.  Default value is ‘1048576’
+     (1 megabyte).  When using DEFLATE COMPRESSION CALL to compress a
+     file containing heterogeneous data (e.g.  a ‘.tar’ archive
+     containing text and binary files), setting this to a smaller value
+     may improve compression ratio.
+
+‘DFLTCC_FIRST_FHT_BLOCK_SIZE’
+     Size of the first fixed deflate block produced by DEFLATE
+     COMPRESSION CALL in bytes in decimal or hexadecimal form.  Default
+     value is ‘4096’ (4 kilobytes).  When using DEFLATE COMPRESSION CALL
+     to compress a small file, setting this to a larger value may
+     improve compression ratio.
+
+‘DFLTCC_RIBM’
+     Value of "Reserved for IBM" field of DEFLATE COMPRESSION CALL
+     parameter block.  Default value is ‘0’.
+
+‘SOURCE_DATE_EPOCH’
+     If set to any value, disables compression with DEFLATE COMPRESSION
+     CALL. This variable is normally set during reproducible builds,
+     where DEFLATE COMPRESSION CALL must be disabled, because its output
+     may not be reproducible.
 
 
 File: gzip.info,  Node: Tapes,  Next: Problems,  Prev: Environment,  Up: Top
@@ -891,7 +924,7 @@ Appendix A GNU Free Documentation License
      the GNU Free Documentation License from time to time.  Such new
      versions will be similar in spirit to the present version, but may
      differ in detail to address new problems or concerns.  See
-     <https://www.gnu.org/copyleft/>.
+     <https://www.gnu.org/licenses/>.
 
      Each version of the License is given a distinguishing version
      number.  If the Document specifies that a particular numbered
@@ -988,16 +1021,16 @@ Appendix B Concept index
 
 
 Tag Table:
-Node: Top1472
-Node: Overview2701
-Node: Sample8309
-Node: Invoking gzip10453
-Node: Advanced usage16793
-Node: Environment18424
-Node: Tapes19285
-Node: Problems19843
-Node: GNU Free Documentation License20329
-Node: Concept index45683
+Node: Top1479
+Node: Overview2702
+Node: Sample8391
+Node: Invoking gzip10535
+Node: Advanced usage16508
+Node: Environment18139
+Node: Tapes20885
+Node: Problems21443
+Node: GNU Free Documentation License21929
+Node: Concept index47283
 
 End Tag Table
 

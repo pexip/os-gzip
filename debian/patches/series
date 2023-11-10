@@ -1,7 +1,3 @@
-sigpipe.diff
 gzip_reproducible_build.diff
-zgrep-syntax-error.diff
 disable-Werror.patch
-gzexe-fix-count-of-lines-to-skip.patch
 skip-out-of-range-timestamp-test-mips64el.patch
-CVE-2022-1271.patch

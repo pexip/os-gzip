@@ -1,6 +1,6 @@
 /* unzip.c -- decompress files in gzip or pkzip format.
 
-   Copyright (C) 1997-1999, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 1997-1999, 2009-2022 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -50,6 +50,8 @@
 
 
 /* Globals */
+
+ulg unzip_crc;  /* CRC found by 'unzip'.  */
 
 static int decrypt;        /* flag to turn on decryption */
 static int pkzip = 0;      /* set for a pkzip file */
@@ -129,7 +131,11 @@ int unzip(in, out)
     /* Decompress */
     if (method == DEFLATED)  {
 
+#ifdef IBM_Z_DFLTCC
+        int res = dfltcc_inflate ();
+#else
         int res = inflate();
+#endif
 
         if (res == 3) {
             xalloc_die ();
@@ -206,6 +212,7 @@ int unzip(in, out)
         }
     }
     ext_header = pkzip = 0; /* for next file */
+    unzip_crc = orig_crc;
     if (err == OK) return OK;
     exit_code = ERROR;
     if (!test) abort_gzip();

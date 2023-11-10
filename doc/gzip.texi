@@ -12,8 +12,8 @@ This manual is for GNU Gzip
 (version @value{VERSION}, @value{UPDATED}),
 and documents commands for compressing and decompressing data.
 
-Copyright @copyright{} 1998-1999, 2001-2002, 2006-2007, 2009-2018 Free Software
-Foundation, Inc.
+Copyright @copyright{} 1998--1999, 2001--2002, 2006--2007, 2009--2022 Free
+Software Foundation, Inc.
 
 Copyright @copyright{} 1992, 1993 Jean-loup Gailly
 
@@ -69,7 +69,7 @@ Free Documentation License''.
 * Sample::		Sample output from @command{gzip}.
 * Invoking gzip::	How to run @command{gzip}.
 * Advanced usage::	Concatenated files.
-* Environment::		The @env{GZIP} environment variable
+* Environment::		Environment variables.
 * Tapes::               Using @command{gzip} on tapes.
 * Problems::		Reporting bugs.
 * GNU Free Documentation License:: Copying and sharing this manual.
@@ -170,10 +170,13 @@ coding (as used in @command{pack}), or adaptive Huffman coding
 
 Compression is always performed, even if the compressed file is slightly
 larger than the original.  The worst case expansion is a few bytes for
-the @command{gzip} file header, plus 5 bytes every 32K block, or an expansion
-ratio of 0.015% for large files.  Note that the actual number of used
-disk blocks almost never increases.  @command{gzip} normally preserves the mode,
-ownership and timestamps of files when compressing or decompressing.
+the @command{gzip} file header, plus 5 bytes per 32@tie{}KiB block, or
+an expansion ratio of 0.015% for large files.  The actual number of
+used disk blocks almost never increases.
+
+@command{gzip} normally preserves the mode and modification timestamp
+of a file when compressing or decompressing.  If you have appropriate
+privileges, it also preserves the file's owner and group.
 
 The @command{gzip} file format is specified in P. Deutsch, GZIP file
 format specification version 4.3,
@@ -300,14 +303,6 @@ ratio: compression ratio (0.0% if unknown)
 uncompressed_name: name of the uncompressed file
 @end example
 
-The uncompressed size is given as @minus{}1 for files not in @command{gzip}
-format, such as compressed @samp{.Z} files.  To get the uncompressed size for
-such a file, you can use:
-
-@example
-zcat file.Z | wc -c
-@end example
-
 In combination with the @option{--verbose} option, the following fields are also
 displayed:
 
@@ -322,16 +317,6 @@ The @abbr{CRC} is given as ffffffff for a file not in gzip format.
 With @option{--verbose}, the size totals and compression ratio for all files
 is also displayed, unless some sizes are unknown.  With @option{--quiet},
 the title and totals lines are not displayed.
-
-The @command{gzip} format represents the input size modulo
-@math{2^32}, so the uncompressed size and compression ratio are listed
-incorrectly for uncompressed files 4 GiB and larger.  To work around
-this problem, you can use the following command to discover a large
-uncompressed file's true size:
-
-@example
-zcat file.gz | wc -c
-@end example
 
 @item --license
 @itemx -L
@@ -350,8 +335,11 @@ is the default when decompressing.
 @item --name
 @itemx -N
 When compressing, always save the original file name, and save
-the original timestamp if the original is a regular file; this
-is the default.  When decompressing, restore the original file name and
+the seconds part of the original modification timestamp if the
+original is a regular file and its timestamp is at least 1 (1970-01-01
+00:00:01 UTC) and is less than 2@sup{32} (2106-02-07 06:28:16 UTC,
+assuming leap seconds are not counted); this
+is the default.  When decompressing, restore from the saved file name and
 timestamp if present.  This option is useful on systems which have
 a limit on file name length or when the timestamp has been lost after
 a file transfer.
@@ -513,6 +501,47 @@ export PATH=/usr/bin
 exec gzip -9 "$@@"
 @end example
 
+The following environment variables are applicable only when using
+@command{gzip} on IBM Z mainframes supporting DEFLATE COMPRESSION CALL
+instruction:
+
+@table @option
+
+@item DFLTCC
+Whether DEFLATE COMPRESSION CALL should be used.  Default value is @samp{1}.
+Set this to @samp{0} to disable DEFLATE COMPRESSION CALL altogether.
+
+@item DFLTCC_LEVEL_MASK
+Compression levels on which DEFLATE COMPRESSION CALL should be used.
+Represented as a bit mask in decimal or hexadecimal form, where each bit
+corresponds to a compression level.  Default value is @samp{2}, which means
+level 1 only.  In order to make use of DEFLATE COMPRESSION CALL by default, that
+is, on levels 1-6, set this to @samp{0x7e}.
+
+@item DFLTCC_BLOCK_SIZE
+Size of deflate blocks produced by DEFLATE COMPRESSION CALL in bytes in decimal
+or hexadecimal form.  Default value is @samp{1048576} (1 megabyte).  When using
+DEFLATE COMPRESSION CALL to compress a file containing heterogeneous data (e.g.
+a @samp{.tar} archive containing text and binary files), setting this to a
+smaller value may improve compression ratio.
+
+@item DFLTCC_FIRST_FHT_BLOCK_SIZE
+Size of the first fixed deflate block produced by DEFLATE COMPRESSION CALL in
+bytes in decimal or hexadecimal form.  Default value is @samp{4096} (4
+kilobytes).  When using DEFLATE COMPRESSION CALL to compress a small file,
+setting this to a larger value may improve compression ratio.
+
+@item DFLTCC_RIBM
+Value of "Reserved for IBM" field of DEFLATE COMPRESSION CALL parameter block.
+Default value is @samp{0}.
+
+@item SOURCE_DATE_EPOCH
+If set to any value, disables compression with DEFLATE COMPRESSION CALL.  This
+variable is normally set during reproducible builds, where DEFLATE COMPRESSION
+CALL must be disabled, because its output may not be reproducible.
+
+@end table
+
 @node Tapes
 @chapter Using @command{gzip} on tapes
 @cindex tapes
@@ -536,7 +565,7 @@ message the hardware and operating system, the compiler used to compile
 @command{gzip},
 a description of the bug behavior, and the input to @command{gzip}
 that triggered
-the bug.@refill
+the bug.
 
 @node GNU Free Documentation License
 @appendix GNU Free Documentation License

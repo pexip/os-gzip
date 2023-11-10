@@ -1,5 +1,5 @@
 # Customize maint.mk                           -*- makefile -*-
-# Copyright (C) 2003-2018 Free Software Foundation, Inc.
+# Copyright (C) 2003-2022 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# Don't include the translation project coordinator email address
+# in announcement template.
+translation_project_ =
+
 # Used in maint.mk's web-manual rule
 manual_title = gzip: the data compression program
 
@@ -26,6 +30,7 @@ local-checks-to-skip =		\
   sc_bindtextdomain		\
   sc_error_message_period	\
   sc_error_message_uppercase	\
+  sc_indent			\
   sc_program_name		\
   sc_texinfo_acronym
 
@@ -35,7 +40,7 @@ bootstrap-tools = autoconf,automake,gnulib
 # Now that we have better tests, make this the default.
 export VERBOSE = yes
 
-old_NEWS_hash = be971f82131abd0bf8f988ec98ebc4e5
+old_NEWS_hash = 525410f95ea9d830850d7a6900e6d229
 
 sc_obs_header_regex = \
   \<(STDC_HEADERS|HAVE_(LIMITS|STRING|UNISTD|STDLIB)_H)\>
