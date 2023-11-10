@@ -1,6 +1,6 @@
 /* bits.c -- output variable-length bit strings
 
-   Copyright (C) 1999, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2009-2022 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -78,7 +78,10 @@
 
 local file_t zfile; /* output gzip file */
 
-local unsigned short bi_buf;
+#ifndef IBM_Z_DFLTCC
+static
+#endif
+unsigned short bi_buf;
 /* Output buffer. bits are inserted starting at the bottom (least significant
  * bits).
  */
@@ -88,7 +91,10 @@ local unsigned short bi_buf;
  * more than 16 bits on some systems.)
  */
 
-local int bi_valid;
+#ifndef IBM_Z_DFLTCC
+static
+#endif
+int bi_valid;
 /* Number of valid bits in bi_buf.  All bits above the last valid bit
  * are always zero.
  */

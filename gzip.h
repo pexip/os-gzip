@@ -1,6 +1,6 @@
 /* gzip.h -- common declarations for all gzip modules
 
-   Copyright (C) 1997-1999, 2001, 2006-2007, 2009-2018 Free Software
+   Copyright (C) 1997-1999, 2001, 2006-2007, 2009-2022 Free Software
    Foundation, Inc.
 
    Copyright (C) 1992-1993 Jean-loup Gailly.
@@ -77,7 +77,7 @@ extern int method;         /* compression method */
 #  ifdef SMALL_MEM
 #    define INBUFSIZ  0x2000  /* input buffer size */
 #  else
-#    define INBUFSIZ  0x8000  /* input buffer size */
+#    define INBUFSIZ  0x40000 /* input buffer size */
 #  endif
 #endif
 #define INBUF_EXTRA  64     /* required by unlzw() */
@@ -86,7 +86,7 @@ extern int method;         /* compression method */
 #  ifdef SMALL_MEM
 #    define OUTBUFSIZ   8192  /* output buffer size */
 #  else
-#    define OUTBUFSIZ  16384  /* output buffer size */
+#    define OUTBUFSIZ 0x40000 /* output buffer size */
 #  endif
 #endif
 #define OUTBUF_EXTRA 2048   /* required by unlzw() */
@@ -191,7 +191,6 @@ typedef int file_t;     /* Do not use stdio */
  */
 
 extern int exit_code;      /* program exit code */
-extern int verbose;        /* be verbose (-v) */
 extern int quiet;          /* be quiet (-q) */
 extern int level;          /* compression level */
 extern int test;           /* check .z file integrity */
@@ -239,6 +238,7 @@ extern int save_orig_name; /* set if original name must be saved */
 
 /* Diagnostic functions */
 #ifdef DEBUG
+extern int verbose;        /* be verbose (-v) */
 #  define Assert(cond,msg) {if (!(cond)) gzip_error (msg);}
 #  define Trace(x) fprintf x
 #  define Tracev(x) {if (verbose) fprintf x ;}
@@ -262,6 +262,7 @@ extern int zip        (int in, int out);
 extern int file_read  (char *buf,  unsigned size);
 
         /* in unzip.c */
+extern ulg unzip_crc;
 extern int unzip      (int in, int out);
 extern int check_zipfile (int in);
 
@@ -275,8 +276,7 @@ extern int unlzh      (int in, int out);
 extern noreturn void abort_gzip (void);
 
         /* in deflate.c */
-extern void lm_init (int pack_level, ush *flags);
-extern off_t deflate (void);
+extern off_t deflate (int pack_level);
 
         /* in trees.c */
 extern void ct_init     (ush *attr, int *method);
@@ -284,6 +284,10 @@ extern int  ct_tally    (int dist, int lc);
 extern off_t flush_block (char *buf, ulg stored_len, int pad, int eof);
 
         /* in bits.c */
+#ifdef IBM_Z_DFLTCC
+extern unsigned short bi_buf;
+extern int bi_valid;
+#endif
 extern void     bi_init    (file_t zipfile);
 extern void     send_bits  (int value, int length);
 extern unsigned bi_reverse (unsigned value, int length) _GL_ATTRIBUTE_CONST;
@@ -293,7 +297,9 @@ extern int     (*read_buf) (char *buf, unsigned size);
 
         /* in util.c: */
 extern int copy           (int in, int out);
-extern ulg  updcrc        (uch *s, unsigned n);
+extern ulg  updcrc        (const uch *s, unsigned n);
+extern ulg  getcrc        (void) _GL_ATTRIBUTE_PURE;
+extern void setcrc        (ulg c);
 extern void clear_bufs    (void);
 extern int  fill_inbuf    (int eof_ok);
 extern void flush_outbuf  (void);
@@ -315,3 +321,9 @@ extern void fprint_off    (FILE *, off_t, int);
 
         /* in inflate.c */
 extern int inflate (void);
+
+        /* in dfltcc.c */
+#ifdef IBM_Z_DFLTCC
+extern int dfltcc_deflate (int pack_level);
+extern int dfltcc_inflate (void);
+#endif

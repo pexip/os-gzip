@@ -1,6 +1,6 @@
 /* deflate.c -- compress data using the deflation algorithm
 
-   Copyright (C) 1999, 2006, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2006, 2009-2022 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -123,10 +123,6 @@
 #define NIL 0
 /* Tail of hash chains */
 
-#define FAST 4
-#define SLOW 2
-/* speed options for the general purpose bit flag */
-
 #ifndef TOO_FAR
 #  define TOO_FAR 4096
 #endif
@@ -214,9 +210,6 @@ local unsigned int max_lazy_match;
  * is not greater than this length. This saves time but degrades compression.
  * max_insert_length is used only for compression levels <= 3.
  */
-
-local int compr_level;
-/* compression level (1..9) */
 
 unsigned good_match;
 /* Use a faster search when the previous match is longer than this */
@@ -307,15 +300,14 @@ local  void check_match (IPos start, IPos match, int length);
 
 /* ===========================================================================
  * Initialize the "longest match" routines for a new file
+ * PACK_LEVEL values: 0: store, 1: best speed, 9: best compression
  */
-void lm_init (pack_level, flags)
-    int pack_level; /* 0: store, 1: best speed, 9: best compression */
-    ush *flags;     /* general purpose bit flag */
+static void
+lm_init (int pack_level)
 {
     register unsigned j;
 
     if (pack_level < 1 || pack_level > 9) gzip_error ("bad pack level");
-    compr_level = pack_level;
 
     /* Initialize the hash table. */
 #if defined MAXSEG_64K && HASH_BITS == 15
@@ -337,11 +329,6 @@ void lm_init (pack_level, flags)
     nice_match       = configuration_table[pack_level].nice_length;
 #endif
     max_chain_length = configuration_table[pack_level].max_chain;
-    if (pack_level == 1) {
-       *flags |= FAST;
-    } else if (pack_level == 9) {
-       *flags |= SLOW;
-    }
     /* ??? reduce max_chain_length for binary files */
 
     strstart = 0;
@@ -732,7 +719,8 @@ local off_t deflate_fast()
  * evaluation for matches: a match is finally adopted only if there is
  * no better match at the next window position.
  */
-off_t deflate()
+off_t
+deflate (int pack_level)
 {
     IPos hash_head;          /* head of hash chain */
     IPos prev_match;         /* previous match */
@@ -740,7 +728,9 @@ off_t deflate()
     int match_available = 0; /* set if previous match exists */
     register unsigned match_length = MIN_MATCH-1; /* length of best match */
 
-    if (compr_level <= 3) return deflate_fast(); /* optimized for speed */
+    lm_init (pack_level);
+    if (pack_level <= 3)
+      return deflate_fast();
 
     /* Process the input block. */
     while (lookahead != 0) {

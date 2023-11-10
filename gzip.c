@@ -1,6 +1,6 @@
 /* gzip (GNU zip) -- compress files with zip algorithm and 'compress' interface
 
-   Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2018 Free Software
+   Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2022 Free Software
    Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -58,6 +58,7 @@ static char const *const license_msg[] = {
 #include <ctype.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdalign.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/stat.h>
@@ -128,10 +129,20 @@ static char const *const license_msg[] = {
 
                 /* global buffers */
 
-DECLARE(uch, inbuf,  INBUFSIZ +INBUF_EXTRA);
-DECLARE(uch, outbuf, OUTBUFSIZ+OUTBUF_EXTRA);
+/* With IBM_Z_DFLTCC, DEFLATE COMPRESSION works faster with
+   page-aligned input and output buffers, and requires page-aligned
+   windows; the alignment requirement is 4096.  On other platforms
+   alignment doesn't hurt, and alignment up to 4096 is portable so
+   let's do that.  */
+#ifdef __alignas_is_defined
+# define BUFFER_ALIGNED alignas (4096)
+#else
+# define BUFFER_ALIGNED /**/
+#endif
+DECLARE(uch BUFFER_ALIGNED, inbuf,  INBUFSIZ +INBUF_EXTRA);
+DECLARE(uch BUFFER_ALIGNED, outbuf, OUTBUFSIZ+OUTBUF_EXTRA);
 DECLARE(ush, d_buf,  DIST_BUFSIZE);
-DECLARE(uch, window, 2L*WSIZE);
+DECLARE(uch BUFFER_ALIGNED, window, 2L*WSIZE);
 #ifndef MAXSEG_64K
     DECLARE(ush, tab_prefix, 1L<<BITS);
 #else
@@ -162,9 +173,11 @@ static int no_name = -1;     /* don't save or restore the original file name */
 static int no_time = -1;     /* don't save or restore the original file time */
 static int recursive = 0;    /* recurse through directories (-r) */
 static int list = 0;         /* list the file contents (-l) */
+#ifndef DEBUG
+static
+#endif
        int verbose = 0;      /* be verbose (-v) */
        int quiet = 0;        /* be very quiet (-q) */
-static int do_lzw = 0;       /* generate output compatible with old compress (-Z) */
        int test = 0;         /* test .gz file integrity */
 static int foreground = 0;   /* set if program run in foreground */
        char *program_name;   /* program name */
@@ -217,7 +230,7 @@ static int dfd = -1;       /* output directory file descriptor */
 unsigned insize;           /* valid bytes in inbuf */
 unsigned inptr;            /* index of next byte to be processed in inbuf */
 unsigned outcnt;           /* bytes in output buffer */
-int rsync = 0;             /* make ryncable chunks */
+int rsync = 0;             /* make rsyncable chunks */
 
 static int handled_sig[] =
   {
@@ -306,7 +319,7 @@ local void discard_input_bytes (size_t nbytes, unsigned int flags);
 local int  make_ofname  (void);
 local void shorten_name  (char *name);
 local int  get_method   (int in);
-local void do_list      (int ifd, int method);
+local void do_list      (int method);
 local int  check_ofname (void);
 local void copy_stat    (struct stat *ifstat);
 local void install_signal_handlers (void);
@@ -369,10 +382,6 @@ local void help()
  "  -V, --version     display version number",
  "  -1, --fast        compress faster",
  "  -9, --best        compress better",
-#ifdef LZW
- "  -Z, --lzw         produce output compatible with old compress",
- "  -b, --bits=BITS   max number of bits per code (implies -Z)",
-#endif
  "",
  "With no FILE, or when FILE is -, read standard input.",
  "",
@@ -526,7 +535,7 @@ int main (int argc, char **argv)
         case 'k':
             keep = 1; break;
         case 'l':
-            list = decompress = to_stdout = 1; break;
+            list = decompress = test = to_stdout = 1; break;
         case 'L':
             license (); finish_out (); break;
         case 'm': /* undocumented, may change later */
@@ -577,14 +586,10 @@ int main (int argc, char **argv)
         case 'V':
             version (); finish_out (); break;
         case 'Z':
-#ifdef LZW
-            do_lzw = 1; break;
-#else
             fprintf(stderr, "%s: -Z not supported in this version\n",
                     program_name);
             try_help ();
             break;
-#endif
         case '1' + ENV_OPTION:  case '2' + ENV_OPTION:  case '3' + ENV_OPTION:
         case '4' + ENV_OPTION:  case '5' + ENV_OPTION:  case '6' + ENV_OPTION:
         case '7' + ENV_OPTION:  case '8' + ENV_OPTION:  case '9' + ENV_OPTION:
@@ -631,8 +636,6 @@ int main (int argc, char **argv)
         do_exit(ERROR);
     }
 
-    if (do_lzw && !decompress) work = lzw;
-
     /* Allocate all global buffers (for DYN_ALLOC option) */
     ALLOC(uch, inbuf,  INBUFSIZ +INBUF_EXTRA);
     ALLOC(uch, outbuf, OUTBUFSIZ+OUTBUF_EXTRA);
@@ -645,12 +648,14 @@ int main (int argc, char **argv)
     ALLOC(ush, tab_prefix1, 1L<<(BITS-1));
 #endif
 
+#if SIGPIPE
     exiting_signal = quiet ? SIGPIPE : 0;
+#endif
     install_signal_handlers ();
 
     /* And get to work */
     if (file_count != 0) {
-        if (to_stdout && !test && !list && (!decompress || !ascii)) {
+        if (to_stdout && !test && (!decompress || !ascii)) {
             SET_BINARY_MODE (STDOUT_FILENO);
         }
         while (optind < argc) {
@@ -668,7 +673,7 @@ int main (int argc, char **argv)
       {
         /* Output any totals, and check for output errors.  */
         if (!quiet && 1 < file_count)
-          do_list (-1, -1);
+          do_list (-1);
         if (fflush (stdout) != 0)
           write_error ();
       }
@@ -754,7 +759,7 @@ local void treat_stdin()
     if (decompress || !ascii) {
       SET_BINARY_MODE (STDIN_FILENO);
     }
-    if (!test && !list && (!decompress || !ascii)) {
+    if (!test && (!decompress || !ascii)) {
       SET_BINARY_MODE (STDOUT_FILENO);
     }
     strcpy(ifname, "stdin");
@@ -781,10 +786,6 @@ local void treat_stdin()
             do_exit(exit_code); /* error message already emitted */
         }
     }
-    if (list) {
-        do_list(ifd, method);
-        return;
-    }
 
     /* Actually do the compression/decompression. Loop over zipped members.
      */
@@ -799,6 +800,12 @@ local void treat_stdin()
         if (method < 0) return; /* error message already emitted */
         bytes_out = 0;            /* required for length check */
     }
+
+    if (list)
+      {
+        do_list (method);
+        return;
+      }
 
     if (verbose) {
         if (test) {
@@ -929,10 +936,10 @@ local void treat_file(iname)
               }
             if (2 <= istat.st_nlink)
               {
-                WARN ((stderr, "%s: %s has %lu other link%c -- unchanged\n",
+                WARN ((stderr, "%s: %s has %lu other link%s -- file ignored\n",
                        program_name, ifname,
                        (unsigned long int) istat.st_nlink - 1,
-                       istat.st_nlink == 2 ? ' ' : 's'));
+                       istat.st_nlink == 2 ? "" : "s"));
                 close (ifd);
                 return;
               }
@@ -944,7 +951,7 @@ local void treat_file(iname)
     /* Generate output file name. For -r and (-t or -l), skip files
      * without a valid gzip suffix (check done in make_ofname).
      */
-    if (to_stdout && !list && !test) {
+    if (to_stdout && !test) {
         strcpy(ofname, "stdout");
 
     } else if (make_ofname() != OK) {
@@ -961,12 +968,6 @@ local void treat_file(iname)
             close(ifd);
             return;               /* error message already emitted */
         }
-    }
-    if (list) {
-        do_list(ifd, method);
-        if (close (ifd) != 0)
-          read_error ();
-        return;
     }
 
     /* If compressing to a file, check if ofname is not ambiguous
@@ -987,7 +988,7 @@ local void treat_file(iname)
     /* Keep the name even if not truncated except with --no-name: */
     if (!save_orig_name) save_orig_name = !no_name;
 
-    if (verbose) {
+    if (verbose && !list) {
         fprintf(stderr, "%s:\t", ifname);
     }
 
@@ -1009,6 +1010,12 @@ local void treat_file(iname)
 
     if (close (ifd) != 0)
       read_error ();
+
+    if (list)
+      {
+        do_list (method);
+        return;
+      }
 
     if (!to_stdout)
       {
@@ -1061,7 +1068,7 @@ local void treat_file(iname)
         } else {
             display_ratio(bytes_in-(bytes_out-header_bytes), bytes_in, stderr);
         }
-        if (!test && !to_stdout)
+        if (!test)
           fprintf(stderr, " -- %s %s", keep ? "created" : "replaced with",
                   ofname);
         fprintf(stderr, "\n");
@@ -1390,7 +1397,8 @@ local int make_ofname()
             /* With -t or -l, try all files (even without .gz suffix)
              * except with -r (behave as with just -dr).
              */
-            if (!recursive && (list || test)) return OK;
+            if (!recursive && test)
+              return OK;
 
             /* Avoid annoying messages with -r */
             if (verbose || (!recursive && !quiet)) {
@@ -1683,7 +1691,6 @@ local int get_method(in)
         last_member = 1;
         if (imagic0 != EOF) {
             write_buf (STDOUT_FILENO, magic, 1);
-            bytes_out++;
         }
     }
     if (method >= 0) return method;
@@ -1719,9 +1726,8 @@ local int get_method(in)
  * If the given method is < 0, display the accumulated totals.
  * IN assertions: time_stamp, header_bytes and ifile_size are initialized.
  */
-local void do_list(ifd, method)
-    int ifd;     /* input file descriptor */
-    int method;  /* compression method */
+static void
+do_list (int method)
 {
     ulg crc;  /* original crc */
     static int first_time = 1;
@@ -1763,26 +1769,9 @@ local void do_list(ifd, method)
         return;
     }
     crc = (ulg)~0; /* unknown */
-    bytes_out = -1L;
-    bytes_in = ifile_size;
 
     if (method == DEFLATED && !last_member) {
-        /* Get the crc and uncompressed size for gzip'ed (not zip'ed) files.
-         * If the lseek fails, we could use read() to get to the end, but
-         * --list is used to get quick results.
-         * Use "gunzip < foo.gz | wc -c" to get the uncompressed size if
-         * you are not concerned about speed.
-         */
-        bytes_in = lseek(ifd, (off_t)(-8), SEEK_END);
-        if (bytes_in != -1L) {
-            uch buf[8];
-            bytes_in += 8L;
-            if (read(ifd, (char*)buf, sizeof(buf)) != sizeof(buf)) {
-                read_error();
-            }
-            crc       = LG(buf);
-            bytes_out = LG(buf+4);
-        }
+      crc = unzip_crc;
     }
 
     if (verbose)

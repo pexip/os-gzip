@@ -13,7 +13,7 @@
 # On Ultrix, /bin/sh is too buggy, change the first line to: #!/bin/sh5
 
 
-# Copyright (C) 1998, 2002, 2004, 2006-2007, 2010-2018 Free Software
+# Copyright (C) 1998, 2002, 2004, 2006-2007, 2010-2022 Free Software
 # Foundation, Inc.
 # Copyright (C) 1993 Jean-loup Gailly
 
@@ -91,10 +91,11 @@ for i do
     continue
   fi
   if test $decomp -eq 0; then
-    if sed -e 1d -e 2q "$file" | grep "^skip=[0-9][0-9]*$" >/dev/null; then
+    case `LC_ALL=C sed -n -e 1d -e '/^skip=[0-9][0-9]*$/p' -e 2q "$file"` in
+    skip=[0-9] | skip=[0-9][0-9] | skip=[0-9][0-9][0-9])
       printf >&2 '%s\n' "$0: $i is already gzexe'd"
-      continue
-    fi
+      continue;;
+    esac
   fi
   if test -u "$file"; then
     printf >&2 '%s\n' "$0: $i has setuid permission, unchanged"
@@ -106,7 +107,7 @@ for i do
   fi
   case /$file in
   */basename | */bash | */cat | */chmod | */cp | \
-  */dirname | */expr | */gzip | \
+  */dirname | */expr | */'gzip' | \
   */ln | */mkdir | */mktemp | */mv | */printf | */rm | \
   */sed | */sh | */sleep | */test | */tail)
     printf >&2 '%s\n' "$0: $i might depend on itself"; continue;;
@@ -145,7 +146,7 @@ for i do
   if test $decomp -eq 0; then
     (cat <<'EOF' &&
 #!/bin/sh
-skip=44
+skip=49
 
 tab='	'
 nl='
@@ -183,7 +184,7 @@ case `printf 'X\n' | tail -n +1 2>/dev/null` in
 X) tail_n=-n;;
 *) tail_n=;;
 esac
-if tail $tail_n +$skip <"$0" | gzip -cd > "$gztmp"; then
+if tail $tail_n +$skip <"$0" | 'gzip' -cd > "$gztmp"; then
   umask $umask
   chmod 700 "$gztmp"
   (sleep 5; rm -fr "$gztmpdir") 2>/dev/null &
@@ -193,7 +194,7 @@ else
   (exit 127); res=127
 fi; exit $res
 EOF
-    gzip -cv9 "$file") > "$tmp" || {
+    'gzip' -cv9 "$file") > "$tmp" || {
       res=$?
       printf >&2 '%s\n' "$0: compression not possible for $i, file unchanged."
       continue
@@ -202,7 +203,7 @@ EOF
   else
     # decompression
     skip=44
-    skip_line=`sed -e 1d -e 2q "$file"`
+    skip_line=`LC_ALL=C sed -e 1d -e 2q "$file"`
     case $skip_line in
     skip=[0-9] | skip=[0-9][0-9] | skip=[0-9][0-9][0-9])
       eval "$skip_line";;
@@ -211,7 +212,7 @@ EOF
     X) tail_n=-n;;
     *) tail_n=;;
     esac
-    tail $tail_n +$skip "$file" | gzip -cd > "$tmp" || {
+    tail $tail_n +$skip "$file" | 'gzip' -cd > "$tmp" || {
       res=$?
       printf >&2 '%s\n' "$0: $i probably not in gzexe format, file unchanged."
       continue

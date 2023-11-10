@@ -85,7 +85,8 @@ union	bytes {
 #define de_stack        ((char_type *)(&d_buf[DIST_BUFSIZE-1]))
 #define tab_suffixof(i) tab_suffix[i]
 
-int block_mode = BLOCK_MODE; /* block compress mode -C compatible with 2.0 */
+/* block compress mode -C compatible with 2.0 */
+static int block_mode = BLOCK_MODE;
 
 /* ============================================================================
  * Decompress in to out.  This routine adapts to the codes in the
@@ -224,10 +225,8 @@ int unlzw(in, out)
                             "posbits:%ld inbuf:%02X %02X %02X %02X %02X\n",
                             posbits, p[-1],p[0],p[1],p[2],p[3]);
 #endif
-                    if (!test && outpos > 0) {
-                        write_buf(out, (char*)outbuf, outpos);
-                        bytes_out += (off_t)outpos;
-                    }
+                    if (outpos > 0)
+                      write_buf (out, outbuf, outpos);
                     gzip_error (to_stdout
                                 ? "corrupt input."
                                 : "corrupt input. Use zcat to recover some data.");
@@ -256,10 +255,7 @@ int unlzw(in, out)
                             outpos += i;
                         }
                         if (outpos >= OUTBUFSIZ) {
-                            if (!test) {
-                                write_buf(out, (char*)outbuf, outpos);
-                                bytes_out += (off_t)outpos;
-                            }
+                            write_buf (out, outbuf, outpos);
                             outpos = 0;
                         }
                         stackp+= i;
@@ -280,9 +276,7 @@ int unlzw(in, out)
         }
     } while (rsize != 0);
 
-    if (!test && outpos > 0) {
-        write_buf(out, (char*)outbuf, outpos);
-        bytes_out += (off_t)outpos;
-    }
+    if (outpos > 0)
+      write_buf (out, outbuf, outpos);
     return OK;
 }

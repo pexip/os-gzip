@@ -1,6 +1,6 @@
 # Configure template for gzip.
 
-# Copyright (C) 1999-2002, 2006-2007, 2009-2018 Free Software Foundation, Inc.
+# Copyright (C) 1999-2002, 2006-2007, 2009-2022 Free Software Foundation, Inc.
 
 # Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -19,7 +19,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-AC_PREREQ([2.63])
+AC_PREREQ([2.64])
 AC_INIT([gzip],
         m4_esyscmd([build-aux/git-version-gen .tarball-version]),
         [bug-gzip@gnu.org])
@@ -46,10 +46,12 @@ m4_syscmd([test "${GNULIB_POSIXCHECK+set}" = set])
 m4_if(m4_sysval, [0], [], [dnl
 gl_ASSERT_NO_GNULIB_POSIXCHECK])
 
-AC_PROG_CC_STDC
+AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_GREP
+AC_CHECK_PROG([LESS], [less], [less])
+AM_CONDITIONAL([LESS], [test "$LESS"])
 AC_CHECK_TOOL([NM], [nm], [nm])
 AC_PROG_LN_S
 AC_PROG_RANLIB
@@ -59,20 +61,9 @@ gl_EARLY
 
 gl_INIT
 
-AC_ARG_ENABLE([gcc-warnings],
-  [AS_HELP_STRING([--enable-gcc-warnings],
-     [turn on many GCC warnings (for developers; best with GNU make)])],
-  [case $enableval in
-     yes|no) ;;
-     *)      AC_MSG_ERROR([bad value $enableval for gcc-warnings option]) ;;
-   esac
-   gl_gcc_warnings=$enableval],
-  [if test -d "$srcdir"/.git; then
-     gl_gcc_warnings=yes
-   else
-     gl_gcc_warnings=no
-   fi]
-)
+# Ensure VLAs are not used.
+# Note -Wvla is implicitly added by gl_MANYWARN_ALL_GCC
+AC_DEFINE([GNULIB_NO_VLA], [1], [Define to 1 to disable use of VLAs])
 
 # gl_GCC_VERSION_IFELSE([major], [minor], [run-if-found], [run-if-not-found])
 # ------------------------------------------------
@@ -92,12 +83,52 @@ AC_DEFUN([gl_GCC_VERSION_IFELSE],
   ]
 )
 
+AC_ARG_ENABLE([gcc-warnings],
+  [AS_HELP_STRING([--enable-gcc-warnings@<:@=TYPE@:>@],
+    [control generation of GCC warnings.  The TYPE 'no' disables
+     warnings (default for non-developer builds); 'yes' generates
+     cheap warnings if available (default for developer builds);
+     'expensive' in addition generates expensive-to-compute warnings
+     if available.])],
+  [case $enableval in
+     no|yes|expensive) ;;
+     *)      AC_MSG_ERROR([bad value $enableval for gcc-warnings option]) ;;
+   esac
+   gl_gcc_warnings=$enableval],
+  [
+   # GCC provides fine-grained control over diagnostics which
+   # is used in gnulib for example to suppress warnings from
+   # certain sections of code.  So if this is available and
+   # we're running from a git repo, then auto enable the warnings.
+   gl_gcc_warnings=no
+   gl_GCC_VERSION_IFELSE([4], [6],
+                         [test -d "$srcdir"/.git \
+                          && ! test -f "$srcdir"/.tarball-version \
+                          && gl_gcc_warnings=yes])]
+)
+
+AC_ARG_ENABLE([dfltcc],
+  [AS_HELP_STRING([--enable-dfltcc],
+     [use DEFLATE COMPRESSION CALL instruction on IBM Z])],
+  [case $enableval in
+     yes|no) gl_dfltcc=$enableval ;;
+     *)      AC_MSG_ERROR([bad value $enableval for dfltcc option]) ;;
+   esac],
+  [gl_dfltcc=no]
+)
+
 if test "$gl_gcc_warnings" = yes; then
   gl_WARN_ADD([-Werror], [WERROR_CFLAGS])
   AC_SUBST([WERROR_CFLAGS])
 
-  nw=
+  ew=
+  AS_IF([test $gl_gcc_warnings != expensive],
+    [# -fanalyzer and related options slow GCC considerably.
+     ew="$ew -fanalyzer -Wno-analyzer-double-free -Wno-analyzer-malloc-leak"
+     ew="$ew -Wno-analyzer-null-dereference -Wno-analyzer-use-after-free"])
+
   # This, $nw, is the list of warnings we disable.
+  nw=$ew
   nw="$nw -Wdeclaration-after-statement" # too useful to forbid
   nw="$nw -Waggregate-return"       # anachronistic
   nw="$nw -Wlong-long"              # C90 is anachronistic (lib/gethrxtime.h)
@@ -114,7 +145,6 @@ if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wredundant-decls"        # openat.h declares e.g., mkdirat
   nw="$nw -Wlogical-op"             # any use of fwrite provokes this
   nw="$nw -Wformat-nonliteral"      # who.c and pinky.c strftime uses
-  nw="$nw -Wvla"                    # warnings in gettext.h
   nw="$nw -Wnested-externs"         # use of XARGMATCH/verify_function__
   nw="$nw -Wswitch-enum"            # Too many warnings for now
   nw="$nw -Wswitch-default"         # Too many warnings for now
@@ -141,6 +171,7 @@ if test "$gl_gcc_warnings" = yes; then
     gl_WARN_ADD([$w])
   done
   gl_WARN_ADD([-Wno-sign-compare])     # Too many warnings for now
+  gl_WARN_ADD([-Wno-type-limits]) # false alarms if 32-bit long, 64-bit time_t
   gl_WARN_ADD([-Wno-unused-parameter]) # Too many warnings for now
   gl_WARN_ADD([-Wsuggest-attribute=const])
   gl_WARN_ADD([-Wsuggest-attribute=noreturn])
@@ -185,14 +216,21 @@ if test "$gl_gcc_warnings" = yes; then
   AC_SUBST([GNULIB_WARN_CFLAGS])
 fi
 
+if test "$gl_dfltcc" = yes; then
+  AC_DEFINE([IBM_Z_DFLTCC], ,
+    [Use DEFLATE COMPRESSION CALL instruction on IBM Z machines.])
+fi
+AM_CONDITIONAL([IBM_Z_DFLTCC],  [test "$gl_dfltcc" = yes])
+
 # cc -E produces incorrect asm files on SVR4, so postprocess it.
 ASCPPPOST="sed '/^ *\\#/d; s,//.*,,; s/% /%/g; s/\\. /./g'"
 AC_SUBST([ASCPPPOST])
 
 AC_CACHE_CHECK([for underline in external names], [gzip_cv_underline],
   [gzip_cv_underline=yes
-   AC_TRY_COMPILE([int foo() {return 0;}], [],
-     [$NM conftest.$OBJEXT | grep _foo >/dev/null 2>&1 ||
+   AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM([[int foo() {return 0;}]], [[]])],
+       [$NM conftest.$OBJEXT | grep _foo >/dev/null 2>&1 ||
         gzip_cv_underline=no])])
 ASCPPFLAGS=
 if test $gzip_cv_underline = no; then
@@ -241,13 +279,20 @@ else
 fi
 AC_SUBST([ASFLAGS_config])
 
-AC_ISC_POSIX
+GZIP_TRANSFORMED=` echo gzip  | sed "$program_transform_name"`
+ZDIFF_TRANSFORMED=`echo zdiff | sed "$program_transform_name"`
+ZGREP_TRANSFORMED=`echo zgrep | sed "$program_transform_name"`
+AC_SUBST([GZIP_TRANSFORMED])
+AC_SUBST([ZDIFF_TRANSFORMED])
+AC_SUBST([ZGREP_TRANSFORMED])
+AM_CONDITIONAL([GZIP_IS_TRANSFORMED],  [test "$GZIP_TRANSFORMED" != gzip])
+AM_CONDITIONAL([ZDIFF_IS_TRANSFORMED],  [test "$ZDIFF_TRANSFORMED" != zdiff])
+AM_CONDITIONAL([ZGREP_IS_TRANSFORMED],  [test "$ZGREP_TRANSFORMED" != zgrep])
+
 AC_C_CONST
-AC_HEADER_STDC
-AC_CHECK_HEADERS_ONCE(fcntl.h limits.h memory.h time.h)
+AC_CHECK_HEADERS_ONCE(fcntl.h limits.h memory.h time.h sys/sdt.h)
 AC_CHECK_FUNCS_ONCE([chown fchmod fchown lstat siginterrupt])
 AC_HEADER_DIRENT
-AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_OFF_T
 
