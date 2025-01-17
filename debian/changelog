@@ -1,3 +1,44 @@
+gzip (1.13-1) sid; urgency=medium
+
+  [ Milan Kupcevic ]
+  * new upstream release
+    - gzip.1: man page tuneup, closes: #894399
+  * restore modified source files
+  * drop timestamp test workaround for glibc bug #983769
+  * set uncompress symlink, closes: #1041239
+  * let debhelper handle symlinks
+  * update copyright notice
+
+  [ Gioele Barabucci ]
+  * Stop building gzip-win32 package (Closes: #1037094, #1051861)
+  * d/patches: Refresh gzip_reproducible_build.diff (Closes: #1058037)
+
+  [ Andreas Tille ]
+  * Standards-Version: 4.7.0 (routine-update)
+  * debhelper-compat 13 (routine-update)
+  * Drop explicit Build-Depends: autoconf, automake since these are
+    implicitly included for debhelper compat 13
+
+ -- Milan Kupcevic <milan@debian.org>  Thu, 16 Jan 2025 23:18:44 -0500
+
+gzip (1.12-1.2) sid; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix FTCBFS from 64bit to 32bit: Pass --build to configure
+    (closes: #1009893)
+  * Clean generated files. (closes: #1044890)
+  * Delete versioned dpkg depencency satisfied in buster.
+    (closes: #1013734)
+
+ -- Helmut Grohne <helmut@subdivi.de>  Sat, 30 Nov 2024 12:32:17 +0100
+
+gzip (1.12-1.1) sid; urgency=medium
+
+  * Non-maintainer upload.
+  * Move files to /usr (closes: #1059533)
+
+ -- Helmut Grohne <helmut@subdivi.de>  Sat, 09 Mar 2024 18:04:58 +0100
+
 gzip (1.12-1) sid; urgency=high
 
   * new upstream release

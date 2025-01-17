@@ -1,5 +1,26 @@
 GNU gzip NEWS                                    -*- outline -*-
 
+* Noteworthy changes in release 1.13 (2023-08-19) [stable]
+
+** Changes in behavior
+
+  zless now diagnoses gzip failures, if using less 623 or later.
+
+  When SIGPIPE is ignored, gzip now exits with status 2 (warning)
+  instead of status 1 (error) when writing to a broken pipe.  This is
+  more useful with programs like 'less' that treat gzip exit status 2
+  as a non-failure.
+
+** Bug fixes
+
+  'gzip -d' no longer fails to report invalid compressed data
+  that uses a dictionary distance outside the input window.
+  [bug present since the beginning]
+
+  Port to C23, which does not allow K&R-style function definitions
+  with parameters, and which does not define __alignas_is_defined.
+
+
 * Noteworthy changes in release 1.12 (2022-04-07) [stable]
 
 ** Changes in behavior
@@ -18,6 +39,7 @@ GNU gzip NEWS                                    -*- outline -*-
 
   zgrep applied to a crafted file name with two or more newlines
   can no longer overwrite an arbitrary, attacker-selected file.
+  This addresses CVE-2022-1271, ZDI-CAN-16587.
   [bug introduced in gzip-1.3.10]
 
   zgrep now names input file on error instead of mislabeling it as
@@ -574,7 +596,7 @@ Major changes form 0.5 to 0.6:
 
 ========================================================================
 
-Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2022 Free Software Foundation,
+Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2023 Free Software Foundation,
 Inc.
 Copyright (C) 1992, 1993 Jean-loup Gailly
 

@@ -1,6 +1,6 @@
 /* gzip (GNU zip) -- compress files with zip algorithm and 'compress' interface
 
-   Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2022 Free Software
+   Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2023 Free Software
    Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
@@ -29,7 +29,7 @@
  */
 
 static char const *const license_msg[] = {
-"Copyright (C) 2018 Free Software Foundation, Inc.",
+"Copyright (C) 2023 Free Software Foundation, Inc.",
 "Copyright (C) 1993 Jean-loup Gailly.",
 "This is free software.  You may redistribute copies of it under the terms of",
 "the GNU General Public License <https://www.gnu.org/licenses/gpl.html>.",
@@ -58,8 +58,6 @@ static char const *const license_msg[] = {
 #include <ctype.h>
 #include <sys/types.h>
 #include <signal.h>
-#include <stdalign.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -72,8 +70,8 @@ static char const *const license_msg[] = {
 #include "timespec.h"
 
 #include "dirname.h"
-#include "dosname.h"
 #include "fcntl--.h"
+#include "filename.h"
 #include "getopt.h"
 #include "ignore-value.h"
 #include "stat-time.h"
@@ -134,7 +132,7 @@ static char const *const license_msg[] = {
    windows; the alignment requirement is 4096.  On other platforms
    alignment doesn't hurt, and alignment up to 4096 is portable so
    let's do that.  */
-#ifdef __alignas_is_defined
+#if defined HAVE_C_ALIGNASOF || defined alignas
 # define BUFFER_ALIGNED alignas (4096)
 #else
 # define BUFFER_ALIGNED /**/
@@ -203,11 +201,6 @@ struct timespec time_stamp;
 
 /* The set of signals that are caught.  */
 static sigset_t caught_signals;
-
-/* If nonzero then exit with status WARNING, rather than with the usual
-   signal status, on receipt of a signal with this value.  This
-   suppresses a "Broken Pipe" message with some shells.  */
-static int volatile exiting_signal;
 
 /* If nonnegative, close this file descriptor and unlink remove_ofname
    on error.  */
@@ -305,33 +298,33 @@ static const struct option longopts[] =
 
 /* local functions */
 
-local noreturn void try_help (void);
-local void help         (void);
-local void license      (void);
-local void version      (void);
-local int input_eof	(void);
-local void treat_stdin  (void);
-local void treat_file   (char *iname);
-local int create_outfile (void);
-local char *get_suffix  (char *name);
-local int  open_input_file (char *iname, struct stat *sbuf);
-local void discard_input_bytes (size_t nbytes, unsigned int flags);
-local int  make_ofname  (void);
-local void shorten_name  (char *name);
-local int  get_method   (int in);
-local void do_list      (int method);
-local int  check_ofname (void);
-local void copy_stat    (struct stat *ifstat);
-local void install_signal_handlers (void);
+_Noreturn static void try_help (void);
+static void help (void);
+static void license (void);
+static void version (void);
+static int input_eof (void);
+static void treat_stdin (void);
+static void treat_file (char *iname);
+static int create_outfile (void);
+static char *get_suffix (char *name);
+static int  open_input_file (char *iname, struct stat *sbuf);
+static void discard_input_bytes (size_t nbytes, unsigned int flags);
+static int  make_ofname (void);
+static void shorten_name (char *name);
+static int  get_method (int in);
+static void do_list (int method);
+static int  check_ofname (void);
+static void copy_stat (struct stat *ifstat);
+static void install_signal_handlers (void);
 static void remove_output_file (bool);
 static void abort_gzip_signal (int);
-local noreturn void do_exit (int exitcode);
+_Noreturn static void do_exit (int exitcode);
 static void finish_out (void);
       int main          (int argc, char **argv);
 static int (*work) (int infile, int outfile) = zip; /* function to call */
 
 #if ! NO_DIR
-local void treat_dir    (int fd, char *dir);
+static void treat_dir (int fd, char *dir);
 #endif
 
 #define strequ(s1, s2) (strcmp((s1),(s2)) == 0)
@@ -345,7 +338,8 @@ try_help ()
 }
 
 /* ======================================================================== */
-local void help()
+static void
+help ()
 {
     static char const* const help_msg[] = {
  "Compress or uncompress FILEs (by default, compress FILES in-place).",
@@ -394,7 +388,8 @@ local void help()
 }
 
 /* ======================================================================== */
-local void license()
+static void
+license ()
 {
     char const *const *p = license_msg;
 
@@ -403,19 +398,18 @@ local void license()
 }
 
 /* ======================================================================== */
-local void version()
+static void
+version ()
 {
     license ();
     printf ("\n");
     printf ("Written by Jean-loup Gailly.\n");
 }
 
-local void progerror (char const *string)
+static void
+progerror (char const *string)
 {
-    int e = errno;
-    fprintf (stderr, "%s: ", program_name);
-    errno = e;
-    perror(string);
+    fprintf (stderr, "%s: %s: %s\n", program_name, string, strerror (errno));
     exit_code = ERROR;
 }
 
@@ -648,11 +642,6 @@ int main (int argc, char **argv)
     ALLOC(ush, tab_prefix1, 1L<<(BITS-1));
 #endif
 
-#if SIGPIPE
-    exiting_signal = quiet ? SIGPIPE : 0;
-#endif
-    install_signal_handlers ();
-
     /* And get to work */
     if (file_count != 0) {
         if (to_stdout && !test && (!decompress || !ascii)) {
@@ -687,7 +676,7 @@ int main (int argc, char **argv)
 }
 
 /* Return nonzero when at end of file on input.  */
-local int
+static int
 input_eof ()
 {
   if (!decompress || last_member)
@@ -727,7 +716,8 @@ get_input_size_and_time (void)
 /* ========================================================================
  * Compress or decompress stdin
  */
-local void treat_stdin()
+static void
+treat_stdin ()
 {
     if (!force && !list
         && (presume_input_tty
@@ -868,8 +858,8 @@ atdir_set (char const *dir, ptrdiff_t dirlen)
 /* ========================================================================
  * Compress or decompress the given file
  */
-local void treat_file(iname)
-    char *iname;
+static void
+treat_file (char *iname)
 {
     /* Accept "-" as synonym for stdin */
     if (strequ(iname, "-")) {
@@ -1042,14 +1032,8 @@ local void treat_file(iname)
             sigprocmask (SIG_SETMASK, &oldset, NULL);
 
             if (unlink_errno)
-              {
-                WARN ((stderr, "%s: ", program_name));
-                if (!quiet)
-                  {
-                    errno = unlink_errno;
-                    perror (ifname);
-                  }
-              }
+              WARN ((stderr, "%s: %s: %s\n", program_name, ifname,
+                     strerror (unlink_errno)));
           }
       }
 
@@ -1091,8 +1075,10 @@ volatile_strcpy (char volatile *dst, char const volatile *src)
  *   ofname has already been updated if there was an original name.
  * OUT assertions: ifd and ofd are closed in case of error.
  */
-local int create_outfile()
+static int
+create_outfile ()
 {
+  static bool signal_handlers_installed;
   int name_shortened = 0;
   int flags = (O_WRONLY | O_CREAT | O_EXCL
                | (ascii && decompress ? 0 : O_BINARY));
@@ -1108,6 +1094,12 @@ local int create_outfile()
           base = b;
           atfd = f;
         }
+    }
+
+  if (!signal_handlers_installed)
+    {
+      signal_handlers_installed = true;
+      install_signal_handlers ();
     }
 
   for (;;)
@@ -1143,7 +1135,7 @@ local int create_outfile()
           break;
 
         default:
-          progerror (ofname);
+          write_error ();
           close (ifd);
           return ERROR;
         }
@@ -1169,8 +1161,8 @@ local int create_outfile()
  * .??z suffix as indicating a compressed file; some people use .xyz
  * to denote volume data.
  */
-local char *get_suffix(name)
-    char *name;
+static char *
+get_suffix (char *name)
 {
     int nlen, slen;
     char suffix[MAX_SUFFIX+3]; /* last chars of name, forced to lower case */
@@ -1285,9 +1277,7 @@ open_and_stat (char *name, int flags, struct stat *st)
  * Return an open file descriptor or -1.
  */
 static int
-open_input_file (iname, sbuf)
-    char *iname;
-    struct stat *sbuf;
+open_input_file (char *iname, struct stat *sbuf)
 {
     int ilen;  /* strlen(ifname) */
     int z_suffix_errno = 0;
@@ -1384,7 +1374,8 @@ open_input_file (iname, sbuf)
  * Generate ofname given ifname. Return OK, or WARNING if file must be skipped.
  * Sets save_orig_name to true if the file name has been truncated.
  */
-local int make_ofname()
+static int
+make_ofname ()
 {
     char *suff;            /* ofname z suffix */
 
@@ -1466,9 +1457,7 @@ local int make_ofname()
    zero byte if NBYTES == (size_t) -1.  If FLAGS say that the header
    CRC should be computed, update the CRC accordingly.  */
 static void
-discard_input_bytes (nbytes, flags)
-    size_t nbytes;
-    unsigned int flags;
+discard_input_bytes (size_t nbytes, unsigned int flags)
 {
   while (nbytes != 0)
     {
@@ -1490,11 +1479,12 @@ discard_input_bytes (nbytes, flags)
  * Updates time_stamp if there is one and neither -m nor -n is used.
  * This function may be called repeatedly for an input file consisting
  * of several contiguous gzip'ed members.
+ * 'in' is the input file descriptor.
  * IN assertions: there is at least one remaining compressed member.
  *   If the member is a zip file, it must be the only one.
  */
-local int get_method(in)
-    int in;        /* input file descriptor */
+static int
+get_method (int in)
 {
     uch flags;     /* compression flags */
     uch magic[10]; /* magic header */
@@ -1816,8 +1806,8 @@ do_list (int method)
  *
  * IN assertion: for compression, the suffix of the given name is z_suffix.
  */
-local void shorten_name(name)
-    char *name;
+static void
+shorten_name (char *name)
 {
     int len;                 /* length of name without z_suffix */
     char *trunc = NULL;      /* character to be truncated */
@@ -1874,7 +1864,8 @@ local void shorten_name(name)
  * The compressed file already exists, so ask for confirmation.
  * Return ERROR if the file must be skipped.
  */
-local int check_ofname()
+static int
+check_ofname ()
 {
     /* Ask permission to overwrite the existing file */
     if (!force) {
@@ -1921,8 +1912,8 @@ do_chown (int fd, char const *name, uid_t uid, gid_t gid)
  * Copy modes, times, ownership from input file to output file.
  * IN assertion: to_stdout is false.
  */
-local void copy_stat(ifstat)
-    struct stat *ifstat;
+static void
+copy_stat (struct stat *ifstat)
 {
     mode_t mode = ifstat->st_mode & S_IRWXUGO;
     int r;
@@ -1945,15 +1936,7 @@ local void copy_stat(ifstat)
         }
       }
     else
-      {
-        int e = errno;
-        WARN ((stderr, "%s: ", program_name));
-        if (!quiet)
-          {
-            errno = e;
-            perror (ofname);
-          }
-      }
+      WARN ((stderr, "%s: %s: %s\n", program_name, ofname, strerror (errno)));
 #endif
 
     /* Change the group first, then the permissions, then the owner.
@@ -1969,14 +1952,8 @@ local void copy_stat(ifstat)
 #else
     r = chmod (ofname, mode);
 #endif
-    if (r != 0) {
-        int e = errno;
-        WARN ((stderr, "%s: ", program_name));
-        if (!quiet) {
-            errno = e;
-            perror(ofname);
-        }
-    }
+    if (r != 0)
+      WARN ((stderr, "%s: %s: %s\n", program_name, ofname, strerror (errno)));
 
     do_chown (ofd, ofname, ifstat->st_uid, -1);
 }
@@ -1986,9 +1963,8 @@ local void copy_stat(ifstat)
 /* ========================================================================
  * Recurse through the given directory.
  */
-local void treat_dir (fd, dir)
-    int fd;
-    char *dir;
+static void
+treat_dir (int fd, char *dir)
 {
     DIR      *dirp;
     char     nbuf[MAX_PATH_LEN];
@@ -2066,8 +2042,8 @@ install_signal_handlers ()
 /* ========================================================================
  * Free all dynamically allocated variables and exit with the given code.
  */
-local void do_exit(exitcode)
-    int exitcode;
+static void
+do_exit (int exitcode)
 {
     static int in_exit = 0;
 
@@ -2089,7 +2065,7 @@ local void do_exit(exitcode)
 }
 
 static void
-finish_out (void)
+finish_out ()
 {
   if (fclose (stdout) != 0)
     write_error ();
@@ -2124,12 +2100,17 @@ remove_output_file (bool signals_already_blocked)
  * Error handler.
  */
 void
-abort_gzip (void)
+finish_up_gzip (int exitcode)
 {
-   remove_output_file (false);
-   do_exit(ERROR);
+  if (0 <= remove_ofname_fd)
+    remove_output_file (false);
+  do_exit (exitcode);
 }
-
+void
+abort_gzip ()
+{
+  finish_up_gzip (ERROR);
+}
 /* ========================================================================
  * Signal handler.
  */
@@ -2137,8 +2118,6 @@ static void
 abort_gzip_signal (int sig)
 {
    remove_output_file (true);
-   if (sig == exiting_signal)
-     _exit (WARNING);
    signal (sig, SIG_DFL);
    raise (sig);
 }

@@ -12,7 +12,7 @@ This manual is for GNU Gzip
 (version @value{VERSION}, @value{UPDATED}),
 and documents commands for compressing and decompressing data.
 
-Copyright @copyright{} 1998--1999, 2001--2002, 2006--2007, 2009--2022 Free
+Copyright @copyright{} 1998--1999, 2001--2002, 2006--2007, 2009--2023 Free
 Software Foundation, Inc.
 
 Copyright @copyright{} 1992, 1993 Jean-loup Gailly
@@ -409,6 +409,9 @@ slowest compression method (optimal compression).  The default
 compression level is @option{-6} (that is, biased towards high compression at
 expense of speed).
 @end table
+
+An exit status of 0 indicates success, 1 indicates failure, and 2
+indicates a warning but not failure.
 
 @node Advanced usage
 @chapter Advanced usage

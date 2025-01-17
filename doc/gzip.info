@@ -1,9 +1,9 @@
-This is gzip.info, produced by makeinfo version 6.8 from gzip.texi.
+This is gzip.info, produced by makeinfo version 7.0.2 from gzip.texi.
 
-This manual is for GNU Gzip (version 1.12, 2 April 2022), and documents
-commands for compressing and decompressing data.
+This manual is for GNU Gzip (version 1.13, 5 February 2023), and
+documents commands for compressing and decompressing data.
 
-   Copyright © 1998–1999, 2001–2002, 2006–2007, 2009–2022 Free Software
+   Copyright © 1998–1999, 2001–2002, 2006–2007, 2009–2023 Free Software
 Foundation, Inc.
 
    Copyright © 1992, 1993 Jean-loup Gailly
@@ -36,10 +36,10 @@ File: gzip.info,  Node: Top,  Next: Overview,  Up: (dir)
 GNU Gzip: General file (de)compression
 **************************************
 
-This manual is for GNU Gzip (version 1.12, 2 April 2022), and documents
-commands for compressing and decompressing data.
+This manual is for GNU Gzip (version 1.13, 5 February 2023), and
+documents commands for compressing and decompressing data.
 
-   Copyright © 1998–1999, 2001–2002, 2006–2007, 2009–2022 Free Software
+   Copyright © 1998–1999, 2001–2002, 2006–2007, 2009–2023 Free Software
 Foundation, Inc.
 
    Copyright © 1992, 1993 Jean-loup Gailly
@@ -377,6 +377,9 @@ The format for running the ‘gzip’ program is:
      level is ‘-6’ (that is, biased towards high compression at expense
      of speed).
 
+   An exit status of 0 indicates success, 1 indicates failure, and 2
+indicates a warning but not failure.
+
 
 File: gzip.info,  Node: Advanced usage,  Next: Environment,  Prev: Invoking gzip,  Up: Top
 
@@ -526,7 +529,8 @@ Appendix A GNU Free Documentation License
 
                      Version 1.3, 3 November 2008
 
-     Copyright © 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc.
+     Copyright © 2000–2002, 2007–2008, 2023 Free Software Foundation,
+     Inc.
      <https://fsf.org/>
 
      Everyone is permitted to copy and distribute verbatim copies
@@ -1021,16 +1025,16 @@ Appendix B Concept index
 
 
 Tag Table:
-Node: Top1479
-Node: Overview2702
-Node: Sample8391
-Node: Invoking gzip10535
-Node: Advanced usage16508
-Node: Environment18139
-Node: Tapes20885
-Node: Problems21443
-Node: GNU Free Documentation License21929
-Node: Concept index47283
+Node: Top1484
+Node: Overview2710
+Node: Sample8399
+Node: Invoking gzip10543
+Node: Advanced usage16623
+Node: Environment18254
+Node: Tapes21000
+Node: Problems21558
+Node: GNU Free Documentation License22044
+Node: Concept index47405
 
 End Tag Table
 

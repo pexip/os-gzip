@@ -1,5 +1,5 @@
 # Customize maint.mk                           -*- makefile -*-
-# Copyright (C) 2003-2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2023 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ bootstrap-tools = autoconf,automake,gnulib
 # Now that we have better tests, make this the default.
 export VERBOSE = yes
 
-old_NEWS_hash = 525410f95ea9d830850d7a6900e6d229
+old_NEWS_hash = 053f232e511b9a95079de114760117a7
 
 sc_obs_header_regex = \
   \<(STDC_HEADERS|HAVE_(LIMITS|STRING|UNISTD|STDLIB)_H)\>
@@ -65,10 +65,16 @@ sc_prohibit_emacs__indent_tabs_mode__setting:
 	halt='use of emacs indent-tabs-mode: setting'			\
 	  $(_sc_search_regexp)
 
+ifeq ($(srcdir),.)
+  srcdirslash =
+else
+  srcdirslash = $(srcdir)/
+endif
+
 sc_gzip_copyright_check:
 	@require='Copyright \(C\) '$$(date +%Y)' Free'			\
-	in_vc_files=$(srcdir)/gzip.c					\
-	halt="out of date copyright in $$in_files; update it"		\
+	in_vc_files='^$(srcdirslash)(gzip\.c|[^z].*\.in|z[^ef].*\.in|zf[^g].*\.in)$$'	\
+	halt="out of date copyright in $$in_vc_files; update it"	\
 	  $(_sc_search_regexp)
 
 include $(srcdir)/dist-check.mk
@@ -95,3 +101,8 @@ export _gl_TS_dir = .
 export _gl_TS_unmarked_extern_vars = \
   block_start d_buf inbuf outbuf prev read_buf strstart window \
   match_start prev_length max_chain_length good_match nice_match
+
+_gl_TS_extern = (?:_Noreturn )?extern
+
+# Add an exemption for sc_makefile_at_at_check.
+_makefile_at_at_check_exceptions = ' && !/MAKEINFO/'

@@ -47,16 +47,29 @@ include /usr/share/dpkg/buildflags.mk
 _topdir=$(call shellescape,$(shell pwd))
 
 CONFIGURE_ARGS=		--prefix=/usr \
-			--bindir=/bin \
-			--infodir=${_topdir}/debian/gzip/usr/share/info \
-			--mandir=${_topdir}/debian/gzip/usr/share/man \
+			--bindir=/usr/bin \
+			--infodir=/usr/share/info \
+			--mandir=/usr/share/man \
 			--disable-silent-rules
 
 ifneq (${DEB_BUILD_ARCH},${DEB_HOST_ARCH})
-CONFIGURE_ARGS+=	--host=${DEB_HOST_GNU_TYPE}
+CONFIGURE_ARGS+=	--host=${DEB_HOST_GNU_TYPE} \
+			--build=${DEB_BUILD_GNU_TYPE}
 endif
 
 reconf-stamp:
+	mkdir -p debian/backup/
+	cp Makefile.in debian/backup/
+	cp aclocal.m4 debian/backup/
+	cp build-aux/config.sub debian/backup/
+	cp build-aux/config.guess debian/backup/
+	cp configure debian/backup/
+	cp doc/Makefile.in debian/backup/doc-Makefile.in
+	cp doc/gzip.info debian/backup/
+	cp doc/stamp-vti debian/backup/
+	cp doc/version.texi debian/backup/
+	cp lib/Makefile.in debian/backup/lib-Makefile.in
+	cp tests/Makefile.in debian/backup/tests-Makefile.in
 	cp -f /usr/share/misc/config.sub build-aux/config.sub
 	cp -f /usr/share/misc/config.guess build-aux/config.guess
 	autoreconf -v
@@ -71,15 +84,7 @@ configure-stamp: reconf-stamp
 	    CONFIG_SHELL=/bin/sh GREP=grep ../configure ${CONFIGURE_ARGS}
 	:>$@
 
-configure-indep: configure-indep-stamp
-configure-indep-stamp: reconf-stamp
-	dh_testdir
-	mkdir -p builddir-indep
-	cd builddir-indep && ../configure --host=i686-w64-mingw32 \
-		LIBS="-Wl,-Bstatic -lssp" --disable-silent-rules
-	:>$@
-
-build: build-stamp build-indep-stamp
+build: build-stamp
 
 build-arch: build-stamp
 build-stamp: configure-stamp
@@ -92,47 +97,32 @@ endif
 endif
 	:>$@
 
-build-indep: build-indep-stamp
-build-indep-stamp: configure-indep-stamp
-	dh_testdir
-	${MAKE} -C builddir-indep
-	:>$@
+build-indep:
 
 clean:
 	dh_testdir
 	dh_testroot
-	-rm -f build-stamp build-indep-stamp configure-stamp configure-indep-stamp reconf-stamp
-	-rm -rf builddir builddir-indep
+	mv debian/backup/Makefile.in Makefile.in || true
+	mv debian/backup/aclocal.m4 aclocal.m4 || true
+	mv debian/backup/config.sub build-aux/config.sub || true
+	mv debian/backup/config.guess build-aux/config.guess || true
+	mv debian/backup/configure configure || true
+	mv debian/backup/doc-Makefile.in doc/Makefile.in || true
+	mv debian/backup/gzip.info doc/gzip.info || true
+	mv debian/backup/stamp-vti doc/stamp-vti || true
+	mv debian/backup/version.texi doc/version.texi || true
+	mv debian/backup/lib-Makefile.in lib/Makefile.in || true
+	mv debian/backup/tests-Makefile.in tests/Makefile.in || true
 	dh_clean
 
-binary: binary-arch binary-indep
-
-binary-indep: build-indep-stamp
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
-	i686-w64-mingw32-strip builddir-indep/gzip.exe
-	install -m 0755 builddir-indep/gzip.exe \
-	    debian/gzip-win32/usr/share/win32/
-	dh_installdocs -i README* TODO NEWS
-	dh_installchangelogs -i ChangeLog
-	dh_lintian -i
-	dh_compress -i
-	dh_fixperms -i
-	dh_installdeb -i
-	dh_gencontrol -i
-	dh_md5sums -i
-	dh_builddeb -i
+binary: binary-arch
 
 binary-arch: build-stamp
 	dh_testdir
 	dh_testroot
 	dh_prep
 	dh_installdirs
-	${MAKE} -C builddir install \
-	    prefix=${_topdir}/debian/gzip/usr \
-	    bindir=${_topdir}/debian/gzip/bin
+	${MAKE} -C builddir install DESTDIR=${_topdir}/debian/gzip
 	dh_testdir -a
 	dh_testroot -a
 	dh_installdocs -a README* TODO NEWS
@@ -143,9 +133,6 @@ binary-arch: build-stamp
 	dh_lintian -a
 	dh_strip -a
 	dh_compress -a
-	ln -s gunzip.1.gz debian/gzip/usr/share/man/man1/uncompress.1.gz
-	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zegrep.1.gz
-	ln -s zgrep.1.gz debian/gzip/usr/share/man/man1/zfgrep.1.gz
 	rm -f ${_topdir}/debian/gzip/usr/share/info/dir.gz
 	dh_fixperms -a
 	dh_makeshlibs -a
@@ -155,5 +142,7 @@ binary-arch: build-stamp
 	dh_md5sums -a
 	dh_builddeb -a
 
+binary-indep:
+
 .PHONY: binary binary-arch binary-indep build build-arch build-indep clean
-.PHONY: configure configure-indep
+.PHONY: configure

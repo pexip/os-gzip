@@ -1,6 +1,5 @@
-/* File names on MS-DOS/Windows systems.
-
-   Copyright (C) 2000-2001, 2004-2006, 2009-2022 Free Software Foundation, Inc.
+/* Put an mbstate_t into an initial conversion state.
+   Copyright (C) 2023 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -15,4 +14,10 @@
    You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#include "filename.h"
+/* Written by Bruno Haible <bruno@clisp.org>, 2023.  */
+
+#include <config.h>
+
+#define IN_MBSZERO
+/* Specification and implementation.  */
+#include <wchar.h>
