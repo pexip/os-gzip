@@ -1,6 +1,6 @@
 # Make gzip (GNU zip).
 
-# Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2022 Free Software Foundation,
+# Copyright (C) 1999, 2001-2002, 2006-2007, 2009-2023 Free Software Foundation,
 # Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -62,7 +62,9 @@ gzip_SOURCES = \
   bits.c deflate.c gzip.c inflate.c \
   trees.c unlzh.c unlzw.c unpack.c unzip.c util.c zip.c
 gzip_LDADD = libver.a lib/libgzip.a
-gzip_LDADD += $(LIB_CLOCK_GETTIME)
+gzip_LDADD += $(LIB_CLOCK_GETTIME) $(LIB_FDATASYNC)
+# gnulib-tool also recommends $(LIB_MBRTOWC) and $(LIBINTL), but
+# modules needing those libraries are avoided so the libraries can be omitted.
 if IBM_Z_DFLTCC
 gzip_SOURCES += dfltcc.c
 endif
@@ -84,7 +86,7 @@ version.h: Makefile
 
 gzip.doc: gzip.1
 	$(AM_V_GEN)groff -man -Tascii $(srcdir)/gzip.1 | col -b | uniq > $@-t \
-	  && mv $@-t $@
+	  && mv $@-t $(srcdir)/gzip.doc
 
 gzip.doc.gz: gzip.doc $(bin_PROGRAMS)
 	$(AM_V_GEN)./gzip < $(srcdir)/gzip.doc >$@-t && mv $@-t $@

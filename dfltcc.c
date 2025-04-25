@@ -1,6 +1,6 @@
 /* dfltcc.c -- compress data using IBM Z DEFLATE COMPRESSION CALL
 
-   Copyright (C) 2019-2022 Free Software Foundation, Inc.
+   Copyright (C) 2019-2023 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
 
 #include <config.h>
 
-#include <stdalign.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 #ifdef HAVE_SYS_SDT_H
@@ -415,7 +413,7 @@ dfltcc_deflate (int pack_level)
 
 /* Decompress ifd into ofd in hardware or fall back to software.  */
 int
-dfltcc_inflate (void)
+dfltcc_inflate ()
 {
   /* Check whether we can use hardware decompression.  */
   if (!is_dfltcc_enabled ())

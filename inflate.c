@@ -1,6 +1,6 @@
 /* Inflate deflated data
 
-   Copyright (C) 1997-1999, 2002, 2006, 2009-2022 Free Software Foundation,
+   Copyright (C) 1997-1999, 2002, 2006, 2009-2023 Free Software Foundation,
    Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -153,8 +153,9 @@ static int huft_free (struct huft *);
    "uch *slide;" and then malloc'ed in the latter case.  The definition
    must be in unzip.h, included above. */
 /* unsigned wp;             current position in slide */
+static bool fresh;
 #define wp outcnt
-#define flush_output(w) (wp=(w),flush_window())
+#define flush_output(w) (fresh = false, wp = (w), flush_window ())
 
 /* Tables for deflate from PKZIP's appnote.txt. */
 static unsigned border[] = {    /* Order of the bit length code lengths */
@@ -310,8 +311,18 @@ int *m                  /* maximum lookup bits, returns actual */
   memzero(c, sizeof(c));
   p = b;  i = n;
   do {
-    Tracecv(*p, (stderr, (n-i >= ' ' && n-i <= '~' ? "%c %d\n" : "0x%x %d\n"),
-            n-i, *p));
+#ifdef DEBUG
+    if (1 < verbose && *p)
+      {
+        if (' ' <= n - i && n - i <= '~')
+          {
+            char ch = n - i;
+            fprintf (stderr, "%c %u\n", ch, *p);
+          }
+        else
+          fprintf (stderr, "0x%x %u\n", n - i, *p);
+      }
+#endif
     c[*p]++;                    /* assume all entries <= BMAX */
     p++;                      /* Can't combine with above line (Solaris bug) */
   } while (--i);
@@ -572,7 +583,9 @@ inflate_codes(struct huft *tl, struct huft *td, int bl, int bd)
       NEEDBITS(e)
       d = w - t->v.n - ((unsigned)b & mask_bits[e]);
       DUMPBITS(e)
-      Tracevv((stderr,"\\[%d,%d]", w-d, n));
+      if (fresh && w <= d)
+        return 1;
+      Tracevv ((stderr, "\\[%u,%u]", w - d, n));
 
       /* do the copy */
       do {
@@ -942,7 +955,7 @@ static int inflate_block(int *e)
 
 
 int
-inflate(void)
+inflate ()
 /* decompress an inflated entry */
 {
   int e;                /* last block flag */
@@ -954,6 +967,7 @@ inflate(void)
   wp = 0;
   bk = 0;
   bb = 0;
+  fresh = true;
 
 
   /* decompress until the last block */

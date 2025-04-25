@@ -1,0 +1,4 @@
+/usr/bin/gunzip /usr/bin/uncompress
+/usr/share/man/man1/gunzip.1.gz /usr/share/man/man1/uncompress.1.gz
+/usr/share/man/man1/zgrep.1.gz /usr/share/man/man1/zegrep.1.gz
+/usr/share/man/man1/zgrep.1.gz /usr/share/man/man1/zfgrep.1.gz

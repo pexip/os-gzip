@@ -1,6 +1,6 @@
 # Make gzip documentation.				-*-Makefile-*-
 
-# Copyright (C) 2006, 2009-2022 Free Software Foundation, Inc.
+# Copyright (C) 2006, 2009-2023 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
+
+
+# The customization variable CHECK_NORMAL_MENU_STRUCTURE is necessary with
+# makeinfo versions ≥ 6.8.
+MAKEINFO = @MAKEINFO@ -c CHECK_NORMAL_MENU_STRUCTURE=1
 
 info_TEXINFOS = gzip.texi
 

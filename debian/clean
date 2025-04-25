@@ -1,0 +1,7 @@
+# stamp files
+build-stamp
+configure-stamp
+reconf-stamp
+
+# build directories
+builddir/
