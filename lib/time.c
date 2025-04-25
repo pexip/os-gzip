@@ -1,5 +1,5 @@
-/* Init guards, somewhat like spinlocks (native Windows implementation).
-   Copyright (C) 2005-2022 Free Software Foundation, Inc.
+/* Provide time() for systems for which it's broken.
+   Copyright (C) 2023 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -14,22 +14,28 @@
    You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-/* Written by Bruno Haible <bruno@clisp.org>, 2005.
-   Based on GCC's gthr-win32.h.  */
+/* Written by Bruno Haible.  */
 
-#ifndef _WINDOWS_INITGUARD_H
-#define _WINDOWS_INITGUARD_H
+#include <config.h>
 
-#define WIN32_LEAN_AND_MEAN  /* avoid including junk */
-#include <windows.h>
+/* Specification.  */
+#include <time.h>
 
-typedef struct
-        {
-          volatile int done;
-          volatile LONG started;
-        }
-        glwthread_initguard_t;
+#include <stdlib.h>
+#include <sys/time.h>
 
-#define GLWTHREAD_INITGUARD_INIT { 0, -1 }
+time_t
+time (time_t *tp)
+{
+  struct timeval tv;
+  time_t tt;
 
-#endif /* _WINDOWS_INITGUARD_H */
+  if (gettimeofday (&tv, NULL) < 0)
+    abort ();
+  tt = tv.tv_sec;
+
+  if (tp)
+    *tp = tt;
+
+  return tt;
+}

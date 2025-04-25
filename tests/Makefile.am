@@ -1,5 +1,5 @@
 ## Process this file with automake to create Makefile.in
-# Copyright 2010-2022 Free Software Foundation, Inc.
+# Copyright 2010-2023 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ TESTS =					\
   memcpy-abuse				\
   mixed					\
   null-suffix-clobber			\
+  pipe-output				\
   reproducible				\
   stdin					\
   timestamp				\
@@ -33,6 +34,7 @@ TESTS =					\
   unpack-invalid			\
   unpack-valid				\
   upper-suffix				\
+  write-error				\
   z-suffix				\
   zdiff					\
   zgrep-f				\

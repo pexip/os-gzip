@@ -1,6 +1,6 @@
 /* zip.c -- compress files to the gzip or pkzip format
 
-   Copyright (C) 1997-1999, 2006-2007, 2009-2022 Free Software Foundation, Inc.
+   Copyright (C) 1997-1999, 2006-2007, 2009-2023 Free Software Foundation, Inc.
    Copyright (C) 1992-1993 Jean-loup Gailly
 
    This program is free software; you can redistribute it and/or modify
@@ -32,9 +32,10 @@ enum { SLOW = 2, FAST = 4 };
  * Deflate in to out.
  * IN assertions: the input and output buffers are cleared.
  *   The variables time_stamp and save_orig_name are initialized.
+ * 'in' and 'out' are input and output file descriptors.
  */
-int zip(in, out)
-    int in, out;            /* input and output file descriptors */
+int
+zip (int in, int out)
 {
     uch  flags = 0;         /* general purpose bit flags */
     ush  attr = 0;          /* ascii/binary flag */
@@ -121,9 +122,8 @@ int zip(in, out)
  * translation, and update the crc and input file size.
  * IN assertion: size >= 2 (for end-of-line translation)
  */
-int file_read(buf, size)
-    char *buf;
-    unsigned size;
+int
+file_read (char *buf, unsigned size)
 {
     unsigned len;
 

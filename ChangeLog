@@ -1,4 +1,306 @@
+2023-08-19  Jim Meyering  <meyering@meta.com>
+
+	version 1.13
+	* NEWS: Record release date.
+
+	maint: remove use gnulib's deprecated stdalign module
+	* bootstrap.conf (gnulib_modules): Remove deprecated stdalign.
+	It was not directly used.
+
+	build: update gnulib to latest; also update bootstrap and tests/init.sh
+
+2023-06-24  Jim Meyering  <meyering@meta.com>
+
+	build: update gnulib to latest
+
+2023-06-24  Bruno Haible  <bruno@clisp.org>
+
+	build: Ensure that makeinfo ≥ 6.8 checks the @menu structure.
+	See <https://lists.gnu.org/archive/html/bug-texinfo/2023-06/msg00015.html>.
+
+	* doc/Makefile.am (MAKEINFO): New variable.
+	* cfg.mk (_makefile_at_at_check_exceptions): New variable.
+
+2023-06-24  Jim Meyering  <meyering@fb.com>
+
+	build: modernize bootstrap prerequsite tools
+	Following Pádraig Brady's example from coreutils, ...
+	* bootstrap.conf: Add an explicit requirement on m4.
+	Add an explicit requirement on texi2pdf -- often packaged separately
+	rather than with makeinfo -- its absence would otherwise induce a
+	failure late in the build process.
+	Also, add an xz requirement and a version for autopoint.
+
+2023-06-16  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: minor tuneup of man page
+	From suggestions by Bjarni Ingli Gislason (bug#64118).
+
+2023-04-11  Bruno Haible  <bruno@clisp.org>
+
+	tests: Fix a test failure.
+	* tests/write-error: Make executable. Skip the test if we're running as root.
+
+2023-04-07  Jim Meyering  <meyering@fb.com>
+
+	gzip: improve a write-failure diagnostic
+	* gzip.c (create_outfile): Call write_error, not progerror,
+	so failure to open for writing gives a better diagnostic:
+	  gzip: failed to write d/f.gz: Permission denied
+	rather than this:
+	  gzip: d/f.gz: Permission denied
+	* tests/write-error: New file, to test for this.
+	* tests/Makefile.am (TESTS): Add the file name.
+	Reported in https://bugs.gnu.org/16876.
+
+2023-04-07  Jim Meyering  <meyering@meta.com>
+
+	build: update gnulib to latest
+
+2023-02-04  Jim Meyering  <meyering@meta.com>
+
+	maint: prefer https: to git:
+	The idea is to defend against some adversary-in-the-middle attacks.
+	Also prefer git.savannah.gnu.org over its shorter alias, git.sv.gnu.org
+	to avoid a warning e.g., from git clone.
+	Also, drop any final ".git" suffix on the resulting URIs.
+	Inspired by Paul Eggert's nearly identical changes to coreutils.
+
+2023-02-03  Paul Eggert  <eggert@cs.ucla.edu>
+
+	zless: improve gzip failure checking
+	* zless.in: Use --show-preproc-error if available.
+
+	gzip: fix exit status on broken pipe
+	Fix gzip to behave like cat etc. when outputting to a broken pipe:
+	i.e., exit with nonzero status if SIGPIPE is ignored, and be
+	terminated by SIGPIPE otherwise.
+	* NEWS: Mention this.
+	* gzip.c: Do not install signal handlers unless creating an output
+	file, for which signal handlers are needed.  This avoids gzip
+	having to deal with signal handlers when outputting to stdout.
+	(exiting_signal): Remove.  All uses removed.
+	(main): Do not install signal handlers at first.
+	(create_outfile): Instead, install them only when needed.
+	(finish_up_gzip): New function, which generalizes abort_gzip.
+	(abort_gzip): Use it.
+	* tests/pipe-output: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* util.c (EPIPE): Default to 0.
+	(write_error): Just warn if it is a pipe error, and suppress that
+	warning if quiet.  In any event exit with status 2 (warning),
+	not status 1 (error).
+	* zgrep.in: Treat gzip status 141 like status 2;
+	it is a broken pipe either way.
+
+	doc: document exit status
+	* doc/gzip.texi: Document exit status.
+
+2023-01-30  Bruno Haible  <bruno@clisp.org>
+
+	Don't require 'rsync' as a prerequisite. It is no longer needed since 2018.
+	* bootstrap.conf (buildreq): Remove rsync.
+
+	Fix "make check" in a subdirectory (VPATH build).
+	* Makefile.am (gzip.doc): Generate gzip.doc in the source directory, not in the
+	build directory.
+
+2023-01-10  Jim Meyering  <meyering@fb.com>
+
+	maint: update --version copyright dates
+	* gunzip.in, gzexe.in, gzip.c, zcat.in, zcmp.in, zdiff.in, zforce.in,
+	zgrep.in, zless.in, zmore.in, znew.in: Also update the --version copyright
+	dates (those are not updated by update-copyright) by running this:
+
+	  grep -l ' 2022 Free'|xargs perl -pi -e 's/ 2022 Free/ 2023 Free/'
+
+2023-01-01  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+	maint: update copyright dates
+
+2022-12-28  Jim Meyering  <meyering@fb.com>
+
+	maint: avoid new sc_tight_scope syntax-check failure
+	* cfg.mk (_gl_TS_extern): Allow a leading '_Noreturn ' on
+	declarations like that of abort_gzip.
+
+	maint: SPC-indent inflate.c
+	* inflate.c: Indent with spaces, not TABs.
+
+2022-12-27  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: update THANKS
+	Add lines for each bug reporter and fix contributor for
+	which there is a Bug# in the commit messages.
+	Fix some accents and email addresses and sorting issues
+	while we’re in the neighborhood.
+
+2022-12-27  Paul Eggert  <eggert@cs.ucla.edu>
+
+	gzip: use strerror, not perror
+	* bootstrap.conf (gnulib_modules): Use strerror, not perror.
+	This removes dependencies on Gnulib’s ‘threadlib’ and ‘lock’ modules,
+	and simplifies the mainline code.  Apparently the old code was written
+	before strerror was universally supported; nowadays we can use Gnulib
+	strerror instead.  All uses of perror changed to use strerror+fprintf.
+
+	* gzip.h (WARN): Since this expands to a statement, wrap within
+	‘do ... while (false)’ for the usual reasons.  Helpful now that
+	calls to WARN are now simplified.
+
+2022-12-27  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: link with $(LIB_FDATASYNC)
+	* Makefile.am (gzip_LDADD): Add LIB_FDATASYNC as gnulib-tool suggests.
+	It’s not likely to make much difference nowadays (does anybody still
+	run Solaris 10 x86?) but it shouldn’t hurt to add it.
+
+	maint: go back to single-file bootstrap
+	I recently added this option to Gnulib, and it seems a better
+	match for gzip as it means just one bootstrap-related file.
+	* README-hacking: Document this.
+	* bootstrap: Sync from gnulib/build-aux/bootstrap, not
+	from gnulib/top/bootstrap.
+	* autogen.sh, autopull.sh, bootstrap-funclib.sh: Remove.
+
+	build: update gnulib submodule to latest
+
+2022-12-26  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: more fallout from Gnulib sync
+	* README-hacking: Improve wording.
+	* autogen.sh, autopull.sh, bootstrap-funclib.sh: New files.
+
+	maint: do not include stdbool.h, stdalign.h
+	They are not needed in C23, which Gnulib now emulates.
+	(We no longer worry about C89, since Gnulib doesn’t.)
+
+2022-12-25  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: fix typo in previous patch
+
+	maint: expand tabs in previous patch
+
+	maint: sync to Gnulib bootstrap
+	Suggested by Bruno Haible (Bug#56749).
+	* README-hacking: Document this.
+	* bootstrap: Sync from Gnulib by running
+	'./bootstrap ./bootstrap --bootstrap-sync’.
+	* bootstrap.conf: Do not mkdir build-aux, since bootstrap
+	does that for us.
+	(bootstrap_post_import_hook): Create the empty ChangeLog
+	in this new function.
+
+	maint: prefer https: to http:
+	This also syncs COPYING from Gnulib and README-hacking from Coreutils.
+
+	maint: port to gcc -std=c99 -Wstrict-prototypes
+	This doesn’t fix any bugs, since the code is correct as-is on all
+	C versions.  However, it pacifies gcc -std=c99 -Wstrict-prototypes,
+	which complains about a function definition without arguments
+	unless there’s a previous prototype with ‘(void)’.
+	Most (but not all) of this patch merely reverts some recent
+	changes to be more consistent when porting to C23.
+	* dfltcc.c (is_dfltcc_enabled):
+	* gzip.c (get_input_size_and_time):
+	* inflate.c (inflate_stored, inflate_fixed, inflate_dynamic):
+	* unpack.c (read_byte):
+
+	gzip: port alignas usage to C23
+	* gzip.c (BUFFER_ALIGNED): Do not depend on __alignas_is_defined
+	as that has been removed from C23.
+
+	gzip: local → static
+	* gzip.h (local): Remove.  All uses replaced by ‘static’.
+	Previously, the source code was inconsistent about using ‘local’
+	vs ‘static’ even before the recent changes, and ‘local’ was
+	more trouble than it was worth.
+
+	maint: port function definitions to C23
+	C23 does not allow K&R style function definitions.
+	Use protyped definitions.  However, don't bother with (void) in
+	function definitions since C23 prefers (); so prefer () to (void) as
+	this will work with older compilers anyway.
+
+	maint: stop using obsolete dosname module
+	* bootstrap.conf (gnulib_modules): Replace dosname with filename.
+	* gzip.c: Include filename.h, not dosname.h.
+	* lib/.gitignore: Remove name of dosname.h.
+
+	maint: stop using obsolete stdnoreturn module
+	* bootstrap.conf (gnulib_modules): Remove stdnoreturn.
+	* gzip.h: Do not include stdnoreturn.h.
+	All uses of noreturn replaced by _Noreturn,
+	at start of declaration for benefit of C23.
+	* lib/.gitignore, m4/.gitignore: Remove names of
+	stdnoreturn-related files.
+
+	maint: stop using obsolete fdl module
+
+	maint: update .gitignore to match Gnulib changes
+
+	build: update gnulib submodule to latest
+
+2022-07-20  Paul Eggert  <eggert@cs.ucla.edu>
+
+	zgrep: tweak for sed failure
+	* zgrep.in (icolon): Defend better against sed failure.
+	Suggested by Lasse Collin.
+
+2022-06-28  Paul Eggert  <eggert@cs.ucla.edu>
+
+	build: update gnulib submodule to latest
+
+	maint: update from Gnulib
+	* bootstrap: Copy from Gnulib.
+
+2022-06-28  Paul Eggert  <eggert@trombone>
+
+	gzip: test invalid-input bug
+	* NEWS: Mention the bug.
+	* tests/unpack-invalid: Test for the bug.
+
+	gzip: detect invalid input
+	Problem reported by Young Mo Kang and fix from Mark Adler (Bug#56247).
+	* inflate.c: Include stdbool.h.
+	(fresh): New static var.
+	* inflate.c (flush_output): Clear it.
+	(inflate): Set it.
+	(inflate_codes): Fail if the offset is outside a fresh input window.
+
+	gzip: match printf format to arg type
+	This pacifies gcc -Wformat -DDEBUG.
+	* bits.c (send_bits):
+	* deflate.c (check_match):
+	* inflate.c (huft_build, inflate_codes):
+	* trees.c (send_code, gen_codes, flush_block):
+	Use correct printf formats for signed vs unsigned integers.
+
 2022-04-07  Jim Meyering  <meyering@fb.com>
+
+	maint: reference CVE-2022-1271 in 1.12's NEWS
+	* NEWS: Reference newly-assigned CVE number.
+	* cfg.mk (old_NEWS_hash)
+
+2022-04-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: update --version copyright dates
+	* cfg.mk (srcdirslash): New macro.
+	(in_vc_files): Use it to avoid problems when srcdir is '.'.
+	Also look for copyright dates in shell script *.in files,
+	so that ‘zgrep --version’ etc. outputs current dates.
+	* gunzip.in, gzexe.in, gzip.c, zcat.in, zcmp.in, zdiff.in:
+	* zforce.in, zgrep.in, zless.in, zmore.in, znew.in:
+	Update copyright date in --version output to 2022.
+
+2022-04-07  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
 
 	version 1.12
 	* NEWS: Record release date.
